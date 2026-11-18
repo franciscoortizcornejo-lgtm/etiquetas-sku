@@ -48,7 +48,7 @@
   .suave { color: var(--suave); }
   .estado-inv { margin-top: 8px; overflow-wrap: anywhere; }
   .estado-inv b { font-variant-numeric: tabular-nums; }
-  .precarga { margin-top: 10px; padding: 8px 12px; border: 1px dashed var(--borde); border-radius: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 14px; }
+  .falta { color: var(--aviso); font-weight: 600; font-size: 12px; background: var(--aviso-fondo); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
   .elegir-local { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--acento); border-radius: 8px; background: var(--fila); }
   .aviso { background: var(--aviso-fondo); color: var(--aviso); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
   .error { background: var(--error-fondo); color: var(--error); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
@@ -110,6 +110,7 @@
     #resultados .r-marca { grid-area: marca; color: var(--suave); }
     #resultados .r-stock { grid-area: stock; color: var(--suave); text-align: right; }
     #resultados .r-stock::before { content: "Stock "; }
+    #resultados .r-stock:empty::before { content: none; }
     #resultados .r-tipo { grid-area: tipo; align-self: center; }
     #resultados .r-acc { grid-area: acc; text-align: right; }
   }
@@ -161,10 +162,6 @@
     <input id="buscar" type="search" placeholder="Primero carga el inventario (paso 1)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" disabled>
     <div class="nota">Enter (en el celular, «Ir») agrega el producto cuando el SKU o el código de barras calza exacto (sirve con lector de códigos).</div>
     <div id="msg-buscar"></div>
-    <div id="caja-precarga" class="precarga" hidden>
-      <span><b id="precarga-nombre"></b>: <span id="precarga-txt"></span></span>
-      <button id="btn-precarga" class="chico">Agregar todos a la lista</button>
-    </div>
     <div id="resultados"></div>
     <details>
       <summary>Agregar varios SKU de una vez</summary>
@@ -774,6 +771,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   pintarAjuste();
   let lista = LS.get('etq.lista.v1', []);
   let nombres = LS.get('etq.nombres.v1', {});
+  let completados = LS.get('etq.completados.v1', {});   // precio que el cliente escribió para SKU que venían sin precio
   let sec = 1 + Math.max(0, ...lista.map(it => it.id || 0));
   /** Cualquier cambio en la lista deja obsoleto el PDF ya generado. */
   function invalidarPdf() {
@@ -797,9 +795,16 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     if (valor) nombres[sku] = valor; else delete nombres[sku];
     LS.set('etq.nombres.v1', nombres); pintarNombres();
   }
+  /** Guarda (o borra con null) el precio que el cliente completó para un SKU que venía sin precio. */
+  function guardarCompletado(sku, precio) {
+    completados = LS.get('etq.completados.v1', completados);
+    if (precio === null || precio === undefined) delete completados[sku]; else completados[sku] = { precio };
+    LS.set('etq.completados.v1', completados);
+  }
   // otra pestaña con esta misma página cambió la lista o los nombres
   addEventListener('storage', ev => {
-    if (ev.key === 'etq.nombres.v1') { nombres = LS.get('etq.nombres.v1', {}); pintarNombres(); pintarLista(); }
+    if (ev.key === 'etq.completados.v1') { completados = LS.get('etq.completados.v1', {}); completarTodos(); }
+    if (ev.key === 'etq.nombres.v1') { nombres = LS.get('etq.nombres.v1', {}); completarTodos(); pintarNombres(); pintarLista(); }
     else if (ev.key === 'etq.lista.v1') {
       lista = LS.get('etq.lista.v1', []);
       sec = Math.max(sec, 1 + Math.max(0, ...lista.map(it => it.id || 0)));
@@ -816,15 +821,16 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const m = /(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(nombre || '');
     return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
   }
-  function pintarPrecarga() {
-    const caja = $('#caja-precarga');
-    caja.hidden = !(inv && PRE.skus.length);
-    if (caja.hidden) return;
-    const sinDatos = PRE.skus.filter(([s]) => { const p = inv.porSku.get(s); return p && p.soloPrecarga; }).length;
-    $('#precarga-nombre').textContent = PRE.nombre || 'SKU precargados';
-    $('#precarga-txt').textContent = `${miles(PRE.skus.length)} SKU precargados` +
-      (sinDatos ? ` (${miles(sinDatos)} sin nombre ni precio: se completan a mano o al cargar un inventario que los traiga)` : ' (todos con nombre y precio del inventario)');
+  /** SKU que vienen con datos incompletos (solo SKU y marca): suma lo que el cliente ya completó (nombre y precio),
+      para que aparezca al buscarlos y se pueda buscar por ese nombre. */
+  function completarConCliente(p) {
+    if (!p || !p.soloPrecarga) return;
+    const n = nombres[p.sku], c = completados[p.sku];
+    p.descCliente = n ? [n[0], n[1]].filter(Boolean).join(' ') : '';
+    p.precioCliente = c && c.precio !== null && c.precio !== undefined ? c.precio : null;
+    p.texto = ETQ.sinTildes((p.sku + ' ' + p.descCliente + ' ' + p.marca).toUpperCase());
   }
+  function completarTodos() { if (inv) for (const p of inv.lista) if (p.soloPrecarga) completarConCliente(p); }
   function activarBusqueda(si) {
     const b = $('#buscar');
     b.disabled = !si; $('#btn-masivo').disabled = !si;
@@ -833,10 +839,10 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   function pintarInventario() {
     const e = $('#estado-inv');
     $('#btn-quitar-inv').hidden = !infoInv || infoInv.origen === 'base';
-    pintarPrecarga();
+    completarTodos();
     if (!infoInv) {
       e.className = 'estado-inv suave';
-      e.textContent = 'Sin inventario cargado.' + (inv ? ' Puedes buscar los SKU precargados; para nombres y precios de todo lo demás, carga el inventario.' : '');
+      e.textContent = 'Sin inventario cargado.';
       activarBusqueda(!!inv); pintarPasos(); return;
     }
     const f = infoInv.fecha ? new Date(infoInv.fecha) : null;
@@ -984,9 +990,14 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     msg.innerHTML = '';
     if (!q.trim()) { cont.innerHTML = ''; return; }
     if (!r.total) { cont.innerHTML = ''; msg.innerHTML = `<div class="error" style="margin-top:8px">No se encontró «${esc(q.trim())}» en el inventario.</div>`; return; }
+    // SKU con datos incompletos: se muestra lo que falta (o lo que el cliente ya completó)
+    const celdaDesc = p => !p.soloPrecarga ? esc(p.desc)
+      : p.descCliente ? `${esc(p.descCliente)} <span class="suave" style="font-size:12px">(completado por ti)</span>` : '<span class="falta">Falta nombre</span>';
+    const celdaPrecio = p => !p.soloPrecarga ? esc(ETQ.formatoPrecio(p.precio))
+      : p.precioCliente !== null && p.precioCliente !== undefined ? esc(ETQ.formatoPrecio(p.precioCliente)) : '<span class="falta">Falta precio</span>';
     const filas = r.lista.map(({ p, tipo }, i) =>
-      `<tr class="${i === 0 && r.exacto ? 'exacto' : ''}"><td class="num r-sku">${esc(p.sku)}</td><td class="r-desc">${esc(p.desc)}</td><td class="r-marca">${esc(p.marca)}</td>` +
-      `<td class="num r-precio">${esc(ETQ.formatoPrecio(p.precio))}</td><td class="num r-stock">${p.stock === null ? '' : miles(p.stock)}</td>` +
+      `<tr class="${i === 0 && r.exacto ? 'exacto' : ''}"><td class="num r-sku">${esc(p.sku)}</td><td class="r-desc">${celdaDesc(p)}</td><td class="r-marca">${esc(p.marca)}</td>` +
+      `<td class="num r-precio">${celdaPrecio(p)}</td><td class="num r-stock">${p.stock === null || p.stock === undefined ? '' : miles(p.stock)}</td>` +
       `<td class="suave r-tipo" style="font-size:12px">${TIPO[tipo]}</td><td class="r-acc"><button class="chico" data-sku="${esc(p.sku)}">Agregar</button></td></tr>`).join('');
     cont.innerHTML = `<table><thead><tr><th class="num">SKU</th><th>Producto</th><th>Marca</th><th class="num">Precio</th><th class="num">Stock</th><th>Coincide por</th><th></th></tr></thead><tbody>${filas}</tbody></table>` +
       (r.total > r.lista.length ? `<div class="pie-res">Mostrando ${r.lista.length} de ${miles(r.total)}. Escribe más para afinar.</div>` : '');
@@ -1030,10 +1041,12 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const ya = lista.find(it => it.sku === p.sku);
     if (ya) ya.cant = Math.min(999, (ya.cant || 0) + cant);
     else {
-      // sin nombre en los datos (SKU precargado): se parte con la marca en la línea 1
+      // sin nombre en los datos (SKU que venía incompleto): se parte con la marca en la línea 1
       const g = nombres[p.sku], auto = p.desc ? ETQ.partirNombre(p.desc) : { l1: ETQ.normalizar(p.marca || ''), l2: '' };
+      // si venía sin precio y el cliente ya lo completó antes, se usa ese
+      const precio = p.soloPrecarga && completados[p.sku] ? completados[p.sku].precio : p.precio;
       lista.push({ id: sec++, sku: p.sku, desc: p.desc, l1: g ? g[0] : auto.l1, l2: g ? g[1] : auto.l2,
-                   precio: p.precio, precioManual: false, cant, encontrado: true });
+                   precio, precioManual: !!(p.soloPrecarga && completados[p.sku]), cant, encontrado: true });
     }
     guardarLista();
     if (pintar) {
@@ -1056,7 +1069,10 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   function avisosItem(it) {
     const a = [];
     if (inv && !it.encontrado) a.push(['error', 'Este SKU no está en el inventario cargado']);
-    if (faltaCompletar(it)) a.push(['aviso', 'Este SKU no está en el inventario: escribe el nombre del producto (línea 1 y 2) y el precio']);
+    if (faltaCompletar(it)) {
+      const faltan = [!nombres[it.sku] ? 'el nombre (línea 1 y 2)' : '', (it.precio === null || it.precio === undefined || it.precio === '') ? 'el precio' : ''].filter(Boolean);
+      a.push(['aviso', `A este SKU le falta ${faltan.join(' y ')}. Escríbelo aquí: queda guardado para la próxima vez que lo busques.`]);
+    }
     const pi = precioDistinto(it);
     if (pi) {
       const mio = ETQ.formatoPrecio(it.precio) || 'vacío', delInv = ETQ.formatoPrecio(pi.precio);
@@ -1136,12 +1152,15 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const inp = ev.target.closest('input[data-f]'); if (!inp) return;
     const it = lista.find(x => x.id === +inp.closest('.item').dataset.id); if (!it) return;
     const f = inp.dataset.f;
+    const prod = inv ? inv.porSku.get(it.sku) : null;
     if (f === 'l1' || f === 'l2') {
       it[f] = inp.value.toUpperCase();
       guardarNombre(it.sku, [it.l1, it.l2]);
+      completarConCliente(prod);                 // queda disponible al buscar ese SKU
     } else if (f === 'precio') {
       it.precio = ETQ.leerPrecio(inp.value); it.precioManual = true;
       it.precioRevisadoEn = infoInv ? infoInv.cargado : null;   // revisado contra el inventario actual
+      if (prod && prod.soloPrecarga) { guardarCompletado(it.sku, it.precio); completarConCliente(prod); }
     } else if (f === 'cant') {
       const v = Number(inp.value);
       it.cant = Number.isFinite(v) ? Math.max(0, Math.min(999, Math.floor(v))) : 0;
@@ -1170,6 +1189,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
       const a = p && !p.desc ? { l1: ETQ.normalizar(p.marca || ''), l2: '' } : ETQ.partirNombre(p ? p.desc : it.desc);
       it.l1 = a.l1; it.l2 = a.l2;
       if (p) { it.precio = p.precio; it.precioManual = false; }
+      if (p && p.soloPrecarga) { guardarCompletado(it.sku, null); completarConCliente(p); }
     }
     guardarLista(); pintarLista();
   });
@@ -1235,16 +1255,6 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     } catch (e) { alert('El archivo de nombres no es válido.'); }
   }
   $('#imp-nombres').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) importarNombres(f); ev.target.value = ''; });
-
-  // ---------- SKU precargados ----------
-  $('#btn-precarga').addEventListener('click', () => {
-    if (!inv || !PRE.skus.length) return;
-    if (!confirm(`¿Agregar los ${PRE.skus.length} SKU de «${PRE.nombre}» a la lista?\nLos que ya estén en la lista suman 1 a su cantidad.`)) return;
-    let n = 0;
-    for (const [sku] of PRE.skus) { const p = inv.porSku.get(sku); if (p) { agregar(p, 1, false); n++; } }
-    pintarLista();
-    $('#msg-buscar').innerHTML = `<div class="ok" style="margin-top:8px">${n} SKU de «${esc(PRE.nombre)}» agregados a la lista.</div>`;
-  });
 
   // ---------- inicio ----------
   inv = indicePre();
