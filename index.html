@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etiquetas por SKU</title>
+<style>
+  :root {
+    --fondo: #f4f5f7; --panel: #ffffff; --texto: #1d2129; --suave: #5b6270; --borde: #d9dce3;
+    --acento: #1f5fbf; --acento-txt: #ffffff; --ok: #1e7a3c; --aviso: #9a5b00; --aviso-fondo: #fff4e0;
+    --error: #b42318; --error-fondo: #fdecea; --fila: #f0f4fb;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 15px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--panel); border-bottom: 1px solid var(--borde); padding: 14px 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 20px; margin: 0; }
+  header p { margin: 0; color: var(--suave); }
+  main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 60px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  #aviso-app { background: var(--aviso-fondo); color: var(--aviso); border-bottom: 1px solid #f0d6a8; padding: 10px 16px; font-size: 14px; }
+  .ajuste-impresion { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .ajuste-impresion input { width: 90px; }
+  section { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px 18px; }
+  h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .circ { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--acento); color: var(--acento-txt); font-size: 13px; font-weight: 600; flex: none; }
+  #pasos { display: flex; align-items: stretch; gap: 6px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; }
+  .paso { flex: 1; display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; color: var(--texto); text-decoration: none; min-width: 0; }
+  .paso:hover { border-color: var(--borde); }
+  .paso .n { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #e3e6ec; color: var(--suave); font-weight: 600; font-size: 14px; }
+  .paso b { display: block; font-size: 14px; }
+  .paso small { display: block; font-size: 12px; color: var(--suave); }
+  .paso.actual { background: var(--fila); border-color: var(--acento); }
+  .paso.actual .n { background: var(--acento); color: var(--acento-txt); }
+  .paso.hecho .n { background: var(--ok); color: #fff; }
+  .paso small.pend { color: var(--aviso); font-weight: 600; }
+  .flecha { align-self: center; color: var(--suave); font-size: 18px; }
+  .paso-imprimir { display: flex; align-items: center; gap: 8px; }
+  button, .boton { font: inherit; border: 1px solid var(--borde); background: var(--panel); color: var(--texto); border-radius: 7px; padding: 7px 14px; cursor: pointer; text-decoration: none; display: inline-block; }
+  button:hover, .boton:hover { border-color: var(--acento); }
+  button.primario, .boton.primario { background: var(--acento); border-color: var(--acento); color: var(--acento-txt); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.chico { padding: 3px 9px; font-size: 13px; }
+  input[type=text], input[type=number], input[type=search], textarea { font: inherit; border: 1px solid var(--borde); border-radius: 7px; padding: 7px 10px; background: #fff; color: var(--texto); }
+  input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+  input:disabled, textarea:disabled { background: #eceef2; color: var(--suave); cursor: not-allowed; border-style: dashed; }
+  input:disabled::placeholder { color: var(--suave); }
+  .fila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .suave { color: var(--suave); }
+  .estado-inv { margin-top: 8px; overflow-wrap: anywhere; }
+  .estado-inv b { font-variant-numeric: tabular-nums; }
+  .elegir-local { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--acento); border-radius: 8px; background: var(--fila); }
+  .aviso { background: var(--aviso-fondo); color: var(--aviso); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
+  .error { background: var(--error-fondo); color: var(--error); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
+  .ok { color: var(--ok); }
+  #buscar { width: 100%; font-size: 18px; padding: 10px 14px; }
+  #resultados { margin-top: 10px; max-height: 340px; overflow: auto; border: 1px solid var(--borde); border-radius: 8px; }
+  #resultados:empty { display: none; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+  th { position: sticky; top: 0; background: #fafbfc; font-weight: 600; color: var(--suave); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.exacto td { background: var(--fila); }
+  .pie-res { padding: 6px 10px; font-size: 13px; color: var(--suave); }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--acento); }
+  #masivo { width: 100%; min-height: 110px; margin: 8px 0; font-family: Consolas, monospace; }
+  #items { display: grid; gap: 10px; }
+  .item { display: grid; grid-template-columns: 204px 1fr; gap: 16px; border: 1px solid var(--borde); border-radius: 9px; padding: 12px; }
+  .item.no-encontrado { border-color: var(--error); }
+  .prev { width: 204px; height: 136px; border: 1px solid #c7cbd3; background: #fff; display: block; }
+  .campos { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px 10px; align-content: start; }
+  .campos label { display: grid; gap: 2px; font-size: 12px; color: var(--suave); }
+  .campos input { width: 100%; text-transform: uppercase; }
+  .c-l1, .c-l2 { grid-column: span 3; }
+  .c-precio, .c-cant { grid-column: span 1; }
+  .c-sku { grid-column: span 2; }
+  .c-acc { grid-column: span 2; display: flex; gap: 6px; align-items: end; justify-content: flex-end; }
+  .item .avisos { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .sku-txt { font-size: 15px; font-weight: 600; color: var(--texto); font-variant-numeric: tabular-nums; padding: 7px 0; }
+  .vacio { color: var(--suave); padding: 18px; text-align: center; border: 1px dashed var(--borde); border-radius: 9px; }
+  .totales { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); }
+  .totales .grande { font-size: 18px; font-weight: 600; }
+  .nota { font-size: 13px; color: var(--suave); margin-top: 8px; }
+  #zona-drop { position: fixed; inset: 0; background: rgba(31,95,191,.12); border: 3px dashed var(--acento); display: none; place-items: center; font-size: 22px; color: var(--acento); z-index: 10; }
+  #zona-drop.activa { display: grid; }
+  .solo-tactil { display: none; }
+  @media (max-width: 760px) {
+    #pasos { display: grid; grid-template-columns: 1fr 1fr; }
+    .flecha { display: none; }
+    .item { grid-template-columns: 1fr; }
+    .campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .c-l1, .c-l2, .c-sku, .c-acc { grid-column: span 2; }
+    header { padding: 12px 16px; }
+    main { padding: 12px 10px 48px; gap: 12px; }
+    section { padding: 14px 12px; }
+    .prev { width: 100%; max-width: 300px; height: auto; aspect-ratio: 3 / 2; }
+    .totales .fila { width: 100%; }
+    /* resultados de búsqueda como tarjetas */
+    #resultados { max-height: none; overflow: visible; border: none; }
+    #resultados table, #resultados tbody, #resultados tr, #resultados td { display: block; }
+    #resultados thead { display: none; }
+    #resultados tr { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "sku precio" "desc desc" "marca stock" "tipo acc";
+                     gap: 2px 10px; border: 1px solid var(--borde); border-radius: 9px; padding: 10px 12px; margin-bottom: 8px; background: var(--panel); }
+    #resultados tr.exacto { background: var(--fila); border-color: var(--acento); }
+    #resultados td { border: none; padding: 0; text-align: left; }
+    #resultados .r-sku { grid-area: sku; font-weight: 600; font-size: 16px; }
+    #resultados .r-precio { grid-area: precio; font-weight: 600; font-size: 16px; text-align: right; }
+    #resultados .r-desc { grid-area: desc; font-size: 15px; }
+    #resultados .r-marca { grid-area: marca; color: var(--suave); }
+    #resultados .r-stock { grid-area: stock; color: var(--suave); text-align: right; }
+    #resultados .r-stock::before { content: "Stock "; }
+    #resultados .r-tipo { grid-area: tipo; align-self: center; }
+    #resultados .r-acc { grid-area: acc; text-align: right; }
+  }
+  /* pantallas táctiles (celular / tablet) */
+  @media (pointer: coarse) {
+    input[type=text], input[type=number], input[type=search], textarea { font-size: 16px; }   /* evita el zoom automático del iPhone */
+    button, .boton { min-height: 44px; padding: 10px 16px; }
+    button.chico, .boton.chico { min-height: 40px; padding: 8px 12px; font-size: 14px; }
+    .solo-pc { display: none; }
+    .solo-tactil { display: block; }
+    .paso { min-height: 52px; }
+  }
+</style>
+</head>
+<body>
+<div id="aviso-app" hidden></div>
+<header>
+  <h1>Etiquetas de precio</h1>
+  <p>Busca por SKU, arma la lista e imprime en hoja carta (30 × 20 mm, 78 por hoja).</p>
+</header>
+<main>
+  <nav id="pasos" aria-label="Cómo se usa">
+    <a class="paso" data-paso="1" href="#sec-inv"><span class="n">1</span><span><b>Cargar inventario</b><small>Botón azul: elige el .txt o .gz</small></span></a>
+    <span class="flecha" aria-hidden="true">→</span>
+    <a class="paso" data-paso="2" href="#sec-buscar"><span class="n">2</span><span><b>Buscar y agregar</b><small>Escribe o escanea el SKU + Enter</small></span></a>
+    <span class="flecha" aria-hidden="true">→</span>
+    <a class="paso" data-paso="3" href="#sec-lista"><span class="n">3</span><span><b>Revisar</b><small>Nombre, cantidad y precio</small></span></a>
+    <span class="flecha" aria-hidden="true">→</span>
+    <a class="paso" data-paso="4" href="#btn-pdf"><span class="n">4</span><span><b>Imprimir</b><small>Generar PDF, imprimir al 100 %</small></span></a>
+  </nav>
+
+  <section id="sec-inv">
+    <h2><span class="circ">1</span> Inventario</h2>
+    <div class="fila">
+      <label class="boton primario" for="archivo">Cargar inventario (.txt o .gz)</label>
+      <input id="archivo" type="file" accept=".txt,.csv,.gz" hidden>
+      <span class="suave solo-pc">o arrastra el archivo a esta página.</span>
+      <button id="btn-quitar-inv" class="chico" hidden title="Borra el inventario guardado en este navegador">Quitar inventario</button>
+    </div>
+    <div id="estado-inv" class="estado-inv suave">Sin inventario cargado.</div>
+    <div id="elegir-local" class="elegir-local" hidden>
+      <b>Este archivo trae varias tiendas. ¿De cuál quieres las etiquetas?</b>
+      <div id="locales-btns" class="fila" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section id="sec-buscar">
+    <h2><span class="circ">2</span> Buscar producto</h2>
+    <input id="buscar" type="search" placeholder="Primero carga el inventario (paso 1)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" disabled>
+    <div class="nota">Enter (en el celular, «Ir») agrega el producto cuando el SKU o el código de barras calza exacto (sirve con lector de códigos).</div>
+    <div id="msg-buscar"></div>
+    <div id="resultados"></div>
+    <details>
+      <summary>Agregar varios SKU de una vez</summary>
+      <textarea id="masivo" placeholder="Un SKU por línea. Opcional: cantidad después del SKU.&#10;80576589&#10;14805802 3"></textarea>
+      <div class="fila"><button id="btn-masivo" disabled>Agregar a la lista</button><span id="msg-masivo"></span></div>
+    </details>
+  </section>
+
+  <section id="sec-lista">
+    <h2><span class="circ">3</span> Revisar la lista</h2>
+    <div id="items"></div>
+    <div class="totales">
+      <div><span id="total" class="grande">0 etiquetas</span> <span id="hojas" class="suave"></span></div>
+      <div class="fila">
+        <button id="btn-vaciar">Vaciar lista</button>
+        <span class="paso-imprimir"><span class="circ">4</span><button id="btn-pdf" class="primario" disabled>Generar PDF</button></span>
+        <a id="lnk-pdf" class="boton" hidden target="_blank" rel="noopener">Abrir PDF</a>
+        <a id="lnk-desc" class="boton" hidden>Descargar</a>
+        <button id="btn-compartir" hidden>Compartir o imprimir</button>
+      </div>
+    </div>
+    <div class="nota">Imprime al 100 % o en «Tamaño real», sin «Ajustar a la página». Los nombres que corrijas quedan guardados en este navegador para la próxima vez.</div>
+    <div class="nota" id="nota-telefono" hidden></div>
+    <details id="det-ajuste">
+      <summary>Ajuste de impresión (si las etiquetas salen más chicas o más grandes)</summary>
+      <div class="nota">Cada hoja trae en el borde izquierdo una <b>regla de 100 mm</b>. Imprime una hoja, mide la regla con una regla de verdad y escribe lo que midió. Las próximas hojas se corrigen solas.</div>
+      <div class="ajuste-impresion">
+        <label for="regla-medida">La regla impresa midió</label>
+        <input id="regla-medida" type="number" inputmode="decimal" min="93" max="107" step="0.5" value="100"> <span>mm</span>
+        <span id="ajuste-txt" class="suave"></span>
+      </div>
+    </details>
+    <details>
+      <summary>Nombres guardados</summary>
+      <div class="fila" style="margin-top:8px">
+        <span id="n-nombres" class="suave"></span>
+        <button id="btn-exportar" class="chico">Exportar</button>
+        <label class="boton chico" for="imp-nombres">Importar</label>
+        <input id="imp-nombres" type="file" accept=".json" hidden>
+      </div>
+      <div class="nota solo-tactil">En el celular, exporta los nombres de vez en cuando: si la página no se usa por varios días, el teléfono puede borrar lo guardado.</div>
+    </details>
+  </section>
+</main>
+<div id="zona-drop">Suelta el archivo de inventario</div>
+
+<script id="bebas" type="application/json">{"upm":1000,"cap":700,"glyphs":{" ":{"a":200,"d":""},"!":{"a":226,"d":"M60 700L60 479L78 180L148 180L166 479L166 700ZM60 106L60 0L166 0L166 106Z"},"\"":{"a":354,"d":"M67 490L132 490L153 700L45 700ZM222 490L287 490L308 700L200 700Z"},"#":{"a":467,"d":"M65 0L153 0L173 189L256 189L237 0L325 0L344 189L399 189L408 268L352 268L373 476L428 476L436 555L380 555L394 700L307 700L293 555L210 555L224 700L137 700L122 555L66 555L58 476L114 476L93 268L38 268L31 189L86 189ZM180 268L201 476L285 476L265 268Z"},"$":{"a":436,"d":"M389 182C389 271 324 333 261 387C208 433 161 474 161 523C161 567 182 590 219 590C256 590 277 562 277 508L277 488L379 499L379 517C379 606 336 668 262 685L262 740L172 740L172 685C99 667 57 605 57 518C57 429 121 366 185 313C239 268 285 226 285 177C285 136 259 110 217 110C175 110 149 141 149 192L149 218L47 207L47 182C47 98 96 34 172 15L172 -40L262 -40L262 15C339 33 389 97 389 182Z"},"%":{"a":621,"d":"M152 311C221 311 258 351 258 423L258 598C258 670 221 710 152 710C83 710 46 670 46 598L46 423C46 351 83 311 152 311ZM130 0L200 0L491 700L421 700ZM152 374C129 374 116 387 116 418L116 603C116 634 129 647 152 647C174 647 188 634 188 603L188 418C188 387 174 374 152 374ZM469 -10C538 -10 575 30 575 102L575 277C575 349 538 389 469 389C400 389 363 349 363 277L363 102C363 30 400 -10 469 -10ZM469 53C446 53 433 66 433 97L433 282C433 313 446 326 469 326C491 326 505 313 505 282L505 97C505 66 491 53 469 53Z"},"&":{"a":518,"d":"M487 0L392 147C417 200 437 267 455 350L349 350C341 311 334 278 326 250L259 354C345 448 368 484 368 559C368 651 308 710 219 710C125 710 64 643 64 552C64 486 94 430 120 387L135 363C76 301 42 249 42 166C42 47 111 -10 198 -10C248 -10 292 9 330 49L360 0ZM220 615C253 615 271 593 271 552C271 508 250 478 207 435C177 483 166 521 166 552C166 590 186 615 220 615ZM218 90C179 90 148 110 148 171C148 213 161 240 189 275L281 128C262 99 242 90 218 90Z"},"'":{"a":199,"d":"M67 490L132 490L153 700L45 700Z"},"(":{"a":258,"d":"M171 -34L237 -5C166 131 135 240 135 351C135 462 166 571 237 707L171 736C79 610 29 476 29 351C29 226 79 92 171 -34Z"},")":{"a":258,"d":"M87 -34C179 92 229 226 229 351C229 476 179 610 87 736L21 707C92 571 123 462 123 351C123 240 92 131 21 -5Z"},"*":{"a":456,"d":"M151 327L228 449L305 327L377 380L285 489L424 525L396 610L261 555L273 700L183 700L195 555L60 610L32 525L171 489L79 380Z"},"+":{"a":434,"d":"M397 381L256 381L256 522L178 522L178 381L37 381L37 303L178 303L178 162L256 162L256 303L397 303Z"},",":{"a":236,"d":"M65 -105L115 -105L171 10L171 105L65 105L65 0L103 0Z"},"-":{"a":300,"d":"M30 298L270 298L270 402L30 402Z"},".":{"a":236,"d":"M65 0L171 0L171 105L65 105Z"},"/":{"a":336,"d":"M9 -33L95 -33L327 733L241 733Z"},"0":{"a":434,"d":"M217 -10C319 -10 387 58 387 159L387 541C387 642 319 710 217 710C115 710 47 642 47 541L47 159C47 58 115 -10 217 -10ZM217 90C178 90 153 115 153 159L153 541C153 585 178 610 217 610C256 610 281 585 281 541L281 159C281 115 256 90 217 90Z"},"1":{"a":303,"d":"M141 0L247 0L247 700L173 700C152 662 103 629 21 623L21 549L141 549Z"},"2":{"a":399,"d":"M272 285C343 398 366 460 366 536C366 644 302 709 197 709C92 709 30 639 30 525L30 492L132 492L132 533C132 582 155 609 196 609C237 609 260 582 260 533C260 479 243 431 185 339L30 92L30 0L366 0L366 100L156 100Z"},"3":{"a":404,"d":"M284 365C333 390 359 436 359 499L359 545C359 646 298 710 195 710C92 710 31 646 31 545L31 521L133 521L133 537C133 588 155 610 193 610C231 610 253 588 253 547L253 493C253 437 229 413 173 413L138 413L138 313L180 313C236 313 260 289 260 233L260 160C260 114 236 90 195 90C154 90 130 114 130 170L130 193L28 183L28 162C28 56 91 -10 197 -10C303 -10 366 56 366 162L366 227C366 293 338 340 284 365Z"},"4":{"a":416,"d":"M394 246L337 246L337 700L211 700L24 241L24 146L231 146L231 0L337 0L337 146L394 146ZM124 246L231 521L231 246Z"},"5":{"a":415,"d":"M211 -10C315 -10 378 54 378 160L378 336C378 421 330 477 251 477C203 477 165 453 150 426L150 600L351 600L351 700L48 700L48 300L150 300L150 312C150 355 178 381 216 381C250 381 272 361 272 320L272 158C272 112 248 90 209 90C170 90 146 112 146 168L146 191L44 181L44 160C44 54 107 -10 211 -10Z"},"6":{"a":423,"d":"M217 -10C317 -10 385 58 385 158L385 294C385 381 337 437 256 437C204 437 169 413 153 387L153 547C153 585 177 610 215 610C253 610 278 585 278 547L278 519L380 519L380 542C380 642 314 710 214 710C114 710 47 642 47 542L47 158C47 58 115 -10 217 -10ZM217 90C177 90 153 115 153 153L153 271C153 315 179 341 221 341C257 341 279 321 279 278L279 153C279 115 255 90 217 90Z"},"7":{"a":367,"d":"M21 700L21 598L240 598L65 0L175 0L343 608L343 700Z"},"8":{"a":428,"d":"M312 364C357 389 383 435 383 499L383 545C383 646 322 710 214 710C106 710 45 646 45 545L45 499C45 435 71 389 116 364C66 340 38 293 38 227L38 162C38 56 101 -10 214 -10C327 -10 390 56 390 162L390 227C390 293 362 340 312 364ZM151 547C151 588 173 610 214 610C255 610 277 588 277 547L277 493C277 437 253 413 214 413C175 413 151 437 151 493ZM284 160C284 114 260 90 214 90C168 90 144 114 144 160L144 233C144 289 168 313 214 313C260 313 284 289 284 233Z"},"9":{"a":423,"d":"M196 710C96 710 28 642 28 542L28 406C28 319 76 263 157 263C209 263 244 287 260 313L260 153C260 115 236 90 198 90C160 90 135 115 135 153L135 181L33 181L33 158C33 58 99 -10 199 -10C299 -10 366 58 366 158L366 542C366 642 298 710 196 710ZM196 610C236 610 260 585 260 547L260 429C260 385 234 359 192 359C156 359 134 379 134 422L134 547C134 585 158 610 196 610Z"},":":{"a":236,"d":"M65 377L171 377L171 482L65 482ZM65 0L171 0L171 105L65 105Z"},";":{"a":236,"d":"M65 377L171 377L171 482L65 482ZM65 -105L115 -105L171 10L171 105L65 105L65 0L103 0Z"},"<":{"a":424,"d":"M42 381L42 305L392 155L392 245L151 343L392 442L392 533Z"},"=":{"a":434,"d":"M42 467L42 389L392 389L392 467ZM42 294L42 216L392 216L392 294Z"},">":{"a":434,"d":"M392 381L42 533L42 442L283 343L42 245L42 155L392 305Z"},"?":{"a":402,"d":"M132 180L222 180L222 196C222 264 255 305 289 346C328 393 368 444 368 537C368 645 304 710 199 710C94 710 32 640 32 526L32 492L134 492L134 534C134 583 157 610 198 610C239 610 262 583 262 534C262 465 234 427 203 388C169 345 132 297 132 196ZM124 0L230 0L230 106L124 106Z"},"@":{"a":731,"d":"M394 -60C456 -60 512 -48 568 -13L576 83C515 38 459 24 396 24C233 24 138 111 138 275C138 495 204 655 392 655C526 655 606 578 606 448C606 352 584 219 532 219C514 219 507 229 507 245C507 248 507 249 508 257L538 527L441 527L437 487C420 518 390 537 346 537C285 537 241 497 232 405L219 273C218 263 217 253 217 244C217 174 248 129 320 129C363 129 399 154 420 196C428 155 456 129 511 129C647 129 689 303 689 446C689 636 580 740 389 740C157 740 44 553 44 285C44 63 174 -60 394 -60ZM357 214C326 214 314 233 314 262C314 266 314 271 315 276L327 393C330 426 343 453 375 453C409 453 426 427 426 386L426 379L417 291C411 235 386 214 357 214Z"},"A":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257Z"},"B":{"a":439,"d":"M321 362C367 388 392 433 392 496L392 533C392 634 327 700 226 700L58 700L58 0L235 0C336 0 401 66 401 167L401 224C401 291 372 338 321 362ZM221 600C262 600 286 576 286 535L286 485C286 434 262 410 211 410L164 410L164 600ZM295 165C295 124 271 100 230 100L164 100L164 310L220 310C271 310 295 286 295 235Z"},"C":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10Z"},"D":{"a":438,"d":"M58 0L224 0C325 0 390 66 390 167L390 533C390 634 325 700 224 700L58 700ZM164 100L164 600L219 600C260 600 284 576 284 535L284 165C284 124 260 100 219 100Z"},"E":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700Z"},"F":{"a":378,"d":"M58 0L164 0L164 295L314 295L314 395L164 395L164 600L354 600L354 700L58 700Z"},"G":{"a":434,"d":"M389 482L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C321 -10 389 58 389 159L389 383L219 383L219 283L283 283L283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 482Z"},"H":{"a":454,"d":"M164 0L164 305L290 305L290 0L396 0L396 700L290 700L290 405L164 405L164 700L58 700L58 0Z"},"I":{"a":222,"d":"M58 0L164 0L164 700L58 700Z"},"J":{"a":309,"d":"M90 -10C190 -10 255 56 255 156L255 700L149 700L149 175C149 114 127 90 77 90C63 90 47 92 36 95L22 0C41 -6 63 -10 90 -10Z"},"K":{"a":450,"d":"M315 0L429 0L269 403L418 700L304 700L164 416L164 700L58 700L58 0L164 0L164 211L204 288Z"},"L":{"a":377,"d":"M58 0L353 0L353 100L164 100L164 700L58 700Z"},"M":{"a":598,"d":"M388 700L300 253L208 700L58 700L58 0L162 0L162 480L261 0L335 0L434 480L434 0L540 0L540 700Z"},"N":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700Z"},"O":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90Z"},"P":{"a":421,"d":"M58 0L164 0L164 284L224 284C325 284 390 350 390 451L390 533C390 634 325 700 224 700L58 700ZM164 384L164 600L219 600C260 600 284 576 284 535L284 449C284 408 260 384 219 384Z"},"Q":{"a":446,"d":"M369 72C382 97 389 126 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C252 -10 281 -3 305 10C325 -26 359 -40 408 -40L408 62C390 62 378 65 369 72ZM283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541Z"},"R":{"a":435,"d":"M406 0L317 313C363 341 390 391 390 456L390 533C390 634 325 700 224 700L58 700L58 0L164 0L164 289L219 289L296 0ZM164 600L219 600C260 600 284 576 284 535L284 454C284 413 260 389 219 389L164 389Z"},"S":{"a":408,"d":"M205 -10C306 -10 376 62 376 162C376 239 343 290 241 392C166 467 144 499 144 543C144 587 165 610 202 610C239 610 260 582 260 528L260 508L362 519L362 537C362 642 302 710 201 710C100 710 40 642 40 538C40 461 70 407 175 308C254 233 272 201 272 157C272 116 246 90 204 90C162 90 136 121 136 172L136 198L34 187L34 162C34 62 104 -10 205 -10Z"},"T":{"a":386,"d":"M24 600L140 600L140 0L246 0L246 600L362 600L362 700L24 700Z"},"U":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10Z"},"V":{"a":422,"d":"M292 700L212 150L132 700L24 700L140 0L282 0L398 700Z"},"W":{"a":602,"d":"M472 700L414 227L356 700L248 700L190 227L132 700L25 700L128 0L245 0L301 461L357 0L474 0L577 700Z"},"X":{"a":443,"d":"M421 0L284 357L416 700L306 700L228 476L145 700L31 700L161 362L22 0L132 0L217 244L307 0Z"},"Y":{"a":430,"d":"M299 700L215 433L133 700L20 700L162 293L162 0L268 0L268 293L410 700Z"},"Z":{"a":382,"d":"M350 700L32 700L32 600L232 600L32 90L32 0L350 0L350 100L150 100L350 610Z"},"[":{"a":259,"d":"M56 -22L234 -22L234 59L152 59L152 640L234 640L234 722L56 722Z"},"\\":{"a":336,"d":"M241 -33L327 -33L95 733L9 733Z"},"]":{"a":258,"d":"M25 -22L202 -22L202 722L25 722L25 640L107 640L107 59L25 59Z"},"^":{"a":434,"d":"M180 700L28 350L119 350L218 591L316 350L406 350L256 700Z"},"_":{"a":400,"d":"M0 -117L400 -117L400 -40L0 -40Z"},"`":{"a":190,"d":"M104 539L170 539L113 700L15 700Z"},"a":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257Z"},"b":{"a":439,"d":"M321 362C367 388 392 433 392 496L392 533C392 634 327 700 226 700L58 700L58 0L235 0C336 0 401 66 401 167L401 224C401 291 372 338 321 362ZM221 600C262 600 286 576 286 535L286 485C286 434 262 410 211 410L164 410L164 600ZM295 165C295 124 271 100 230 100L164 100L164 310L220 310C271 310 295 286 295 235Z"},"c":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10Z"},"d":{"a":438,"d":"M58 0L224 0C325 0 390 66 390 167L390 533C390 634 325 700 224 700L58 700ZM164 100L164 600L219 600C260 600 284 576 284 535L284 165C284 124 260 100 219 100Z"},"e":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700Z"},"f":{"a":378,"d":"M58 0L164 0L164 295L314 295L314 395L164 395L164 600L354 600L354 700L58 700Z"},"g":{"a":434,"d":"M389 482L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C321 -10 389 58 389 159L389 383L219 383L219 283L283 283L283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 482Z"},"h":{"a":454,"d":"M164 0L164 305L290 305L290 0L396 0L396 700L290 700L290 405L164 405L164 700L58 700L58 0Z"},"i":{"a":222,"d":"M58 0L164 0L164 700L58 700Z"},"j":{"a":309,"d":"M90 -10C190 -10 255 56 255 156L255 700L149 700L149 175C149 114 127 90 77 90C63 90 47 92 36 95L22 0C41 -6 63 -10 90 -10Z"},"k":{"a":450,"d":"M315 0L429 0L269 403L418 700L304 700L164 416L164 700L58 700L58 0L164 0L164 211L204 288Z"},"l":{"a":377,"d":"M58 0L353 0L353 100L164 100L164 700L58 700Z"},"m":{"a":598,"d":"M388 700L300 253L208 700L58 700L58 0L162 0L162 480L261 0L335 0L434 480L434 0L540 0L540 700Z"},"n":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700Z"},"o":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90Z"},"p":{"a":421,"d":"M58 0L164 0L164 284L224 284C325 284 390 350 390 451L390 533C390 634 325 700 224 700L58 700ZM164 384L164 600L219 600C260 600 284 576 284 535L284 449C284 408 260 384 219 384Z"},"q":{"a":446,"d":"M369 72C382 97 389 126 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C252 -10 281 -3 305 10C325 -26 359 -40 408 -40L408 62C390 62 378 65 369 72ZM283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541Z"},"r":{"a":435,"d":"M406 0L317 313C363 341 390 391 390 456L390 533C390 634 325 700 224 700L58 700L58 0L164 0L164 289L219 289L296 0ZM164 600L219 600C260 600 284 576 284 535L284 454C284 413 260 389 219 389L164 389Z"},"s":{"a":408,"d":"M205 -10C306 -10 376 62 376 162C376 239 343 290 241 392C166 467 144 499 144 543C144 587 165 610 202 610C239 610 260 582 260 528L260 508L362 519L362 537C362 642 302 710 201 710C100 710 40 642 40 538C40 461 70 407 175 308C254 233 272 201 272 157C272 116 246 90 204 90C162 90 136 121 136 172L136 198L34 187L34 162C34 62 104 -10 205 -10Z"},"t":{"a":386,"d":"M24 600L140 600L140 0L246 0L246 600L362 600L362 700L24 700Z"},"u":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10Z"},"v":{"a":422,"d":"M292 700L212 150L132 700L24 700L140 0L282 0L398 700Z"},"w":{"a":602,"d":"M472 700L414 227L356 700L248 700L190 227L132 700L25 700L128 0L245 0L301 461L357 0L474 0L577 700Z"},"x":{"a":443,"d":"M421 0L284 357L416 700L306 700L228 476L145 700L31 700L161 362L22 0L132 0L217 244L307 0Z"},"y":{"a":430,"d":"M299 700L215 433L133 700L20 700L162 293L162 0L268 0L268 293L410 700Z"},"z":{"a":382,"d":"M350 700L32 700L32 600L232 600L32 90L32 0L350 0L350 100L150 100L350 610Z"},"{":{"a":273,"d":"M248 -30L248 52C184 52 173 62 173 120L173 246C173 303 155 341 110 350C155 359 173 397 173 454L173 580C173 638 184 648 248 648L248 730C131 730 77 699 77 592L77 439C77 403 63 391 21 391L21 309C63 309 77 297 77 261L77 108C77 1 131 -30 248 -30Z"},"|":{"a":400,"d":"M152 -150L248 -150L248 850L152 850Z"},"}":{"a":273,"d":"M25 -30C142 -30 196 1 196 108L196 261C196 297 210 309 252 309L252 391C210 391 196 403 196 439L196 592C196 699 142 730 25 730L25 648C89 648 100 638 100 580L100 454C100 397 118 359 163 350C118 341 100 303 100 246L100 120C100 62 89 52 25 52Z"},"~":{"a":434,"d":"M86 268C113 308 126 328 151 328C168 328 182 318 210 300C246 277 262 271 284 271C336 271 367 306 405 371L348 414C321 374 308 354 283 354C266 354 253 364 224 382C188 404 172 411 150 411C98 411 67 376 29 311Z"},"Á":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM201.2 760L145.1 760L193.6 896.9L276.9 896.9Z"},"É":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM198.7 760L142.6 760L191.1 896.9L274.4 896.9Z"},"Í":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM101.2 760L45.1 760L93.6 896.9L176.9 896.9Z"},"Ó":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM209.2 760L153.1 760L201.6 896.9L284.9 896.9Z"},"Ú":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM208.2 760L152.1 760L200.6 896.9L283.9 896.9Z"},"À":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM220.8 760L276.9 760L228.4 896.9L145.1 896.9Z"},"È":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM218.3 760L274.4 760L225.9 896.9L142.6 896.9Z"},"Ì":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM120.8 760L176.9 760L128.4 896.9L45.1 896.9Z"},"Ò":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM228.8 760L284.9 760L236.4 896.9L153.1 896.9Z"},"Ù":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM227.8 760L283.9 760L235.4 896.9L152.1 896.9Z"},"Â":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM188.1 900L93.8 760L150.2 760L211.6 856.4L272.4 760L328.2 760L235.2 900Z"},"Ê":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM185.6 900L91.3 760L147.7 760L209.1 856.4L269.9 760L325.7 760L232.7 900Z"},"Î":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM88.1 900L-6.2 760L50.2 760L111.6 856.4L172.4 760L228.2 760L135.2 900Z"},"Ô":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM196.1 900L101.8 760L158.2 760L219.6 856.4L280.4 760L336.2 760L243.2 900Z"},"Û":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM195.1 900L100.8 760L157.2 760L218.6 856.4L279.4 760L335.2 760L242.2 900Z"},"Ñ":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700ZM141.7 760C161.1 790 170.5 805 188.5 805C200.7 805 210.8 797.5 231 784C256.9 766.8 268.4 762.2 284.2 762.2C321.7 762.2 344 788.5 371.4 837.2L330.3 869.5C310.9 839.5 301.5 824.5 283.5 824.5C271.3 824.5 261.9 832 241 845.5C215.1 862 203.6 867.2 187.8 867.2C150.3 867.2 128 841 100.6 792.2Z"},"Ä":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM73.6 760L158.4 760L158.4 844L73.6 844ZM263.6 760L348.4 760L348.4 844L263.6 844Z"},"Ë":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM71.1 760L155.9 760L155.9 844L71.1 844ZM261.1 760L345.9 760L345.9 844L261.1 844Z"},"Ï":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM-6.4 760L78.4 760L78.4 844L-6.4 844ZM143.6 760L228.4 760L228.4 844L143.6 844Z"},"Ö":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM81.6 760L166.4 760L166.4 844L81.6 844ZM271.6 760L356.4 760L356.4 844L271.6 844Z"},"Ü":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM80.6 760L165.4 760L165.4 844L80.6 844ZM270.6 760L355.4 760L355.4 844L270.6 844Z"},"Ç":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10ZM172.6 -188L212.6 -188L257.4 -96L257.4 -20L172.6 -20L172.6 -104L203 -104Z"}}}</script>
+
+<script id="core">
+/* Núcleo sin dependencias del navegador: inventario, búsqueda, diseño de la etiqueta y PDF. */
+const ETQ = (() => {
+  'use strict';
+  const MM = 72 / 25.4;                     // puntos PDF por mm
+  // Diseño medido en la foto de la etiqueta y en la plantilla AVENE.pdf (Excel).
+  const SPEC = {
+    ancho: 30, alto: 20,                    // mm
+    emNombre: 10.6997 * 25.4 / 96,          // Bebas 8 pt de Excel = 2,831 mm de em
+    emPrecio: 29.224501 * 25.4 / 96,        // Bebas 22 pt de Excel = 7,732 mm de em
+    base1: 2.749, base2: 6.381,             // base de las 2 líneas del nombre (mm desde arriba)
+    baseUnica: 4.565,                       // nombre de 1 línea: centrado entre ambas
+    baseSku: 9.698, basePrecio: 18.240,
+    anchoMax: 28.0,                         // ancho útil de texto (mm)
+    negritaAvance: 0.02,                    // negrita simulada de Windows: +2 % del em por carácter
+    negritaTrazo: 0.01,                     // y contorno de 1 % del em
+    columnas: 6, filas: 13,                 // 78 etiquetas por hoja carta
+    pagina: [612, 792],                     // carta en puntos
+    corte: { ancho: 0.2, gris: 0.55 },      // líneas de corte (mm, gris 0-1)
+  };
+  let G = {}, OPS = {};
+
+  function init(font) {
+    G = font.glyphs; OPS = {};
+    for (const [ch, g] of Object.entries(G)) {
+      if (!g.d) continue;
+      const tk = g.d.match(/[MLCZ]|-?\d*\.?\d+/g) || [];
+      const out = []; let i = 0, cmd = null;
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      const toma = n => {
+        const r = tk.slice(i, i + n).map(Number); i += n;
+        for (let k = 0; k < r.length; k += 2) { x0 = Math.min(x0, r[k]); x1 = Math.max(x1, r[k]); y0 = Math.min(y0, r[k + 1]); y1 = Math.max(y1, r[k + 1]); }
+        return r.join(' ');
+      };
+      while (i < tk.length) {
+        if (/[MLCZ]/.test(tk[i])) cmd = tk[i++];
+        if (cmd === 'M') { out.push(toma(2) + ' m'); cmd = 'L'; }
+        else if (cmd === 'L') out.push(toma(2) + ' l');
+        else if (cmd === 'C') out.push(toma(6) + ' c');
+        else if (cmd === 'Z') { out.push('h'); cmd = null; }
+        else i++;
+      }
+      OPS[ch] = { ops: out.join('\n'), bbox: [x0, y0, x1, y1] };
+    }
+  }
+
+  // ---------- texto ----------
+  function sinTildes(t) { return t.normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function normalizar(t) {
+    t = String(t ?? '').replace(/[ \t]/g, ' ').toUpperCase().replace(/\s+/g, ' ').trim();
+    let out = '';
+    for (const ch of t) {
+      if (G[ch]) { out += ch; continue; }
+      for (const b of sinTildes(ch)) if (G[b]) out += b;
+    }
+    return out;
+  }
+  function anchoTexto(t, em, negrita) {
+    let u = 0;
+    for (const ch of t) u += (G[ch] ? G[ch].a / 1000 : 0) + (negrita ? SPEC.negritaAvance : 0);
+    return u * em;
+  }
+  function envolver(t, max, em) {
+    const lineas = []; let actual = '';
+    for (const p of t.split(' ').filter(Boolean)) {
+      const prueba = actual ? actual + ' ' + p : p;
+      if (!actual || anchoTexto(prueba, em, true) <= max) actual = prueba;
+      else { lineas.push(actual); actual = p; }
+    }
+    if (actual) lineas.push(actual);
+    return lineas;
+  }
+  /** Reparte la descripción en 2 líneas como lo hace Excel con «Ajustar texto». */
+  function partirNombre(desc) {
+    const t = normalizar(desc);
+    for (let esc = 1; esc >= 0.6 - 1e-9; esc -= 0.02) {
+      const l = envolver(t, SPEC.anchoMax, SPEC.emNombre * esc);
+      if (l.length <= 2) return { l1: l[0] || '', l2: l[1] || '' };
+    }
+    const p = t.split(' '), m = Math.ceil(p.length / 2);
+    return { l1: p.slice(0, m).join(' '), l2: p.slice(m).join(' ') };
+  }
+  function formatoPrecio(n) {
+    if (n === null || n === undefined || n === '') return '';
+    const v = Math.round(Number(n));
+    if (!Number.isFinite(v)) return '';
+    return '$' + String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  // ---------- diseño de una etiqueta ----------
+  function colocar(gl, t, em, negrita, base) {
+    let x = SPEC.ancho / 2 - anchoTexto(t, em, negrita) / 2;   // centrado por avance, como Excel
+    for (const ch of t) {
+      const g = G[ch]; if (!g) continue;
+      if (g.d) gl.push({ ch, x, base, em, negrita });
+      x += (g.a / 1000 + (negrita ? SPEC.negritaAvance : 0)) * em;
+    }
+  }
+  function colocarAjustado(gl, t, em, negrita, base, avisos, que) {
+    const w = anchoTexto(t, em, negrita);
+    const esc = w > SPEC.anchoMax ? SPEC.anchoMax / w : 1;
+    if (esc < 0.999) avisos.push(`${que} achicado al ${Math.round(esc * 100)} % para que quepa`);
+    colocar(gl, t, em * esc, negrita, base);
+  }
+  /** et = {l1, l2, sku, precio} -> {glifos:[{ch,x,base,em,negrita}], avisos:[]} en mm */
+  function componer(et) {
+    const glifos = [], avisos = [];
+    const lineas = [normalizar(et.l1), normalizar(et.l2)].filter(Boolean);
+    const anchoN = Math.max(0, ...lineas.map(l => anchoTexto(l, SPEC.emNombre, true)));
+    const escN = anchoN > SPEC.anchoMax ? SPEC.anchoMax / anchoN : 1;
+    if (escN < 0.999) avisos.push(`Nombre achicado al ${Math.round(escN * 100)} % para que quepa`);
+    if (!lineas.length) avisos.push('Sin nombre');
+    const bases = lineas.length === 2 ? [SPEC.base1, SPEC.base2] : [SPEC.baseUnica];
+    lineas.forEach((l, i) => colocar(glifos, l, SPEC.emNombre * escN, true, bases[i]));
+    colocarAjustado(glifos, normalizar('SKU ' + (et.sku ?? '')), SPEC.emNombre, false, SPEC.baseSku, avisos, 'SKU');
+    const precio = formatoPrecio(et.precio);
+    if (precio) colocarAjustado(glifos, precio, SPEC.emPrecio, true, SPEC.basePrecio, avisos, 'Precio');
+    else avisos.push('Sin precio');
+    return { glifos, avisos };
+  }
+  function svgEtiqueta(et) {
+    const { glifos } = componer(et);
+    const p = glifos.map(g => {
+      const k = +(g.em / 1000).toFixed(7);
+      const trazo = g.negrita ? ` stroke="#000" stroke-width="${SPEC.negritaTrazo * 1000}" stroke-linejoin="round"` : '';
+      return `<path transform="matrix(${k} 0 0 ${-k} ${g.x.toFixed(4)} ${g.base.toFixed(4)})" d="${G[g.ch].d}"${trazo}/>`;
+    }).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SPEC.ancho} ${SPEC.alto}"><rect width="${SPEC.ancho}" height="${SPEC.alto}" fill="#fff"/><g fill="#000">${p}</g></svg>`;
+  }
+
+  // ---------- inventario ----------
+  function numero(s) {
+    const v = parseFloat(String(s ?? '').trim().replace(/\./g, '').replace(',', '.'));
+    return Number.isFinite(v) ? v : null;
+  }
+  // ---------- descompresor gzip propio (RFC 1951/1952) para navegadores sin DecompressionStream (iPhone < iOS 16.4) ----------
+  const LBASE = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258];
+  const LEXT = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
+  const DBASE = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
+  const DEXT = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+  const ORDEN_CL = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+  function inflar(src, inicio, tamanoEsperado) {
+    let pos = inicio, buf = 0, nb = 0, n = 0;
+    let out = new Uint8Array(tamanoEsperado > 0 ? tamanoEsperado : Math.max(1024, src.length * 4));
+    const espacio = k => {
+      if (n + k <= out.length) return;
+      let m = out.length * 2; while (m < n + k) m *= 2;
+      const o = new Uint8Array(m); o.set(out.subarray(0, n)); out = o;
+    };
+    const bits = k => {
+      while (nb < k) { if (pos >= src.length) throw new Error('incompleto'); buf |= src[pos++] << nb; nb += 8; }
+      const v = buf & ((1 << k) - 1); buf >>>= k; nb -= k; return v;
+    };
+    const tabla = largos => {                                  // Huffman canónico
+      const cuenta = new Uint16Array(16), offs = new Uint16Array(16), sim = new Uint16Array(largos.length);
+      for (const l of largos) cuenta[l]++;
+      cuenta[0] = 0;
+      for (let i = 1; i < 16; i++) offs[i] = offs[i - 1] + cuenta[i - 1];
+      for (let s = 0; s < largos.length; s++) if (largos[s]) sim[offs[largos[s]]++] = s;
+      return { cuenta, sim };
+    };
+    const leer = h => {
+      let codigo = 0, primero = 0, indice = 0;
+      for (let l = 1; l < 16; l++) {
+        codigo |= bits(1);
+        const c = h.cuenta[l];
+        if (codigo - c < primero) return h.sim[indice + (codigo - primero)];
+        indice += c; primero = (primero + c) << 1; codigo <<= 1;
+      }
+      throw new Error('código inválido');
+    };
+    let fijaL = null, fijaD = null, final = 0;
+    do {
+      final = bits(1);
+      const tipo = bits(2);
+      if (tipo === 0) {                                        // bloque sin comprimir
+        buf = 0; nb = 0;
+        if (pos + 4 > src.length) throw new Error('incompleto');
+        const len = src[pos] | (src[pos + 1] << 8); pos += 4;
+        if (pos + len > src.length) throw new Error('incompleto');
+        espacio(len); out.set(src.subarray(pos, pos + len), n); n += len; pos += len;
+        continue;
+      }
+      let hl, hd;
+      if (tipo === 1) {                                        // Huffman fijo
+        if (!fijaL) {
+          const l = new Uint8Array(288); l.fill(8, 0, 144); l.fill(9, 144, 256); l.fill(7, 256, 280); l.fill(8, 280, 288);
+          fijaL = tabla(l); fijaD = tabla(new Uint8Array(30).fill(5));
+        }
+        hl = fijaL; hd = fijaD;
+      } else if (tipo === 2) {                                 // Huffman dinámico
+        const nlit = bits(5) + 257, ndist = bits(5) + 1, ncl = bits(4) + 4;
+        const cl = new Uint8Array(19);
+        for (let i = 0; i < ncl; i++) cl[ORDEN_CL[i]] = bits(3);
+        const hcl = tabla(cl), largos = new Uint8Array(nlit + ndist);
+        for (let i = 0; i < nlit + ndist;) {
+          const s = leer(hcl);
+          if (s < 16) largos[i++] = s;
+          else {
+            let rep = 0, val = 0;
+            if (s === 16) { if (!i) throw new Error('código inválido'); val = largos[i - 1]; rep = 3 + bits(2); }
+            else if (s === 17) rep = 3 + bits(3);
+            else rep = 11 + bits(7);
+            if (i + rep > largos.length) throw new Error('código inválido');
+            largos.fill(val, i, i + rep); i += rep;
+          }
+        }
+        hl = tabla(largos.subarray(0, nlit)); hd = tabla(largos.subarray(nlit));
+      } else throw new Error('bloque inválido');
+      for (;;) {
+        let s = leer(hl);
+        if (s < 256) { espacio(1); out[n++] = s; }
+        else if (s === 256) break;
+        else {
+          s -= 257; if (s >= 29) throw new Error('código inválido');
+          const len = LBASE[s] + bits(LEXT[s]);
+          const ds = leer(hd); if (ds >= 30) throw new Error('código inválido');
+          const d = DBASE[ds] + bits(DEXT[ds]);
+          if (d > n) throw new Error('distancia inválida');
+          espacio(len);
+          for (let k = 0; k < len; k++, n++) out[n] = out[n - d];
+        }
+      }
+    } while (!final);
+    return out.subarray(0, n);
+  }
+  function gunzip(b) {
+    if (b[0] !== 0x1f || b[1] !== 0x8b || b[2] !== 8) throw new Error('no es gzip');
+    if (b.length < 18) throw new Error('incompleto');
+    const flg = b[3]; let p = 10;
+    if (flg & 4) p += 2 + (b[p] | (b[p + 1] << 8));            // FEXTRA
+    if (flg & 8) { while (p < b.length && b[p] !== 0) p++; p++; }     // FNAME (acotado: archivo dañado no se queda pegado)
+    if (flg & 16) { while (p < b.length && b[p] !== 0) p++; p++; }    // FCOMMENT
+    if (flg & 2) p += 2;                                       // FHCRC
+    if (p >= b.length - 8) throw new Error('incompleto');
+    const isize = (b[b.length - 4] | (b[b.length - 3] << 8) | (b[b.length - 2] << 16) | (b[b.length - 1] << 24)) >>> 0;
+    const datos = inflar(b, p, isize);
+    if ((datos.length >>> 0) !== isize) throw new Error('tamaño no coincide');
+    return datos;
+  }
+
+  /** Bytes del archivo -> texto. Acepta el .txt tal cual o comprimido en .gz (como llega por correo). */
+  async function textoDeArchivo(bytes) {
+    if (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {        // firma de gzip
+      let ok = false;
+      if (typeof DecompressionStream !== 'undefined') {
+        try {
+          const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+          bytes = new Uint8Array(await new Response(s).arrayBuffer()); ok = true;
+        } catch (e) { /* se intenta con el descompresor propio */ }
+      }
+      if (!ok) {
+        try { bytes = gunzip(bytes); }
+        catch (e) { throw new Error('el archivo .gz está dañado o incompleto.'); }
+      }
+    }
+    return new TextDecoder('windows-1252').decode(bytes);
+  }
+  function cabecera(lineas) {
+    const cab = (lineas[0] || '').split(';').map(s => s.trim().toUpperCase());
+    const col = n => cab.indexOf(n);
+    return { sku: col('NUMBER'), upc: col('UPC'), desc: col('DESCRIP.PRODUCTO'), precio: col('P.VTA'), marca: col('MARCA'),
+             stock: col('STOCK DISPONIBLE'), local: col('LOCAL') };
+  }
+  /** Tiendas (columna LOCAL) que trae el archivo, con su cantidad de SKU. [] si no hay columna LOCAL. */
+  function localesDelInventario(texto) {
+    const lineas = texto.split(/\r?\n/), c = cabecera(lineas);
+    if (c.local < 0 || c.sku < 0) return [];
+    const m = new Map();
+    for (let i = 1; i < lineas.length; i++) {
+      const f = lineas[i].split(';');
+      if (f.length <= Math.max(c.local, c.sku)) continue;
+      const l = f[c.local].trim(), sku = f[c.sku].trim();
+      if (!l || !sku) continue;
+      if (!m.has(l)) m.set(l, new Set());
+      m.get(l).add(sku);
+    }
+    return [...m].map(([local, s]) => ({ local, skus: s.size }));
+  }
+  /** Lee el TXT del sistema (separado por «;»). Con `local`, solo usa las filas de esa tienda. No guarda el costo. */
+  function parsearInventario(texto, local = null) {
+    const lineas = texto.split(/\r?\n/);
+    const c = cabecera(lineas);
+    if (c.sku < 0 || c.desc < 0 || c.precio < 0)
+      throw new Error('El archivo no tiene las columnas NUMBER, DESCRIP.PRODUCTO y P.VTA. ¿Es el inventario disponible?');
+    const porSku = new Map();
+    for (let i = 1; i < lineas.length; i++) {
+      const f = lineas[i].split(';');
+      if (f.length <= Math.max(c.sku, c.desc, c.precio)) continue;
+      if (local !== null && c.local >= 0 && (f[c.local] || '').trim() !== local) continue;   // otra tienda
+      const sku = f[c.sku].trim(); if (!sku) continue;
+      let p = porSku.get(sku);
+      if (!p) {
+        p = { sku, desc: f[c.desc].replace(/\s+$/, ''), marca: c.marca >= 0 ? f[c.marca].trim() : '', precio: numero(f[c.precio]), stock: 0, upcs: [] };
+        porSku.set(sku, p);
+      }
+      if (c.stock >= 0) p.stock += numero(f[c.stock]) || 0;      // el stock viene por código de barras
+      const upc = c.upc >= 0 ? f[c.upc].trim() : '';
+      if (upc && !p.upcs.includes(upc)) p.upcs.push(upc);
+    }
+    return [...porSku.values()];
+  }
+  function indexar(productos) {
+    const porSku = new Map(), porUpc = new Map();
+    for (const p of productos) {
+      porSku.set(p.sku, p);
+      for (const u of p.upcs) porUpc.set(u, p);
+      p.texto = sinTildes((p.sku + ' ' + p.desc + ' ' + p.marca).toUpperCase());
+      // el inventario corta el nombre en 28 caracteres: la última palabra puede venir incompleta
+      const ult = p.desc.length >= 28 ? sinTildes(p.desc.toUpperCase()).split(/\s+/).pop() : '';
+      p.cola = ult && ult.length >= 2 && !/^\d+$/.test(ult) ? ult : '';
+    }
+    return { porSku, porUpc, lista: productos };
+  }
+  /** Prioridad: SKU exacto > código de barras exacto > SKU que empieza > SKU que contiene > nombre/marca. */
+  function buscar(inv, q, limite = 60) {
+    q = String(q ?? '').trim();
+    const res = [], vistos = new Set();
+    const add = (p, tipo) => { if (p && !vistos.has(p.sku)) { vistos.add(p.sku); res.push({ p, tipo }); } };
+    if (!q || !inv) return { lista: [], total: 0, exacto: null };
+    if (/^\d+$/.test(q)) {
+      add(inv.porSku.get(q), 'sku');
+      add(inv.porSku.get(q.replace(/^0+/, '')), 'sku');
+      add(inv.porUpc.get(q), 'upc');
+      if (q.length === 12) add(inv.porUpc.get('0' + q), 'upc');     // UPC-A leído sin el 0 inicial
+      for (const p of inv.lista) if (p.sku.startsWith(q)) add(p, 'sku-inicio');
+      for (const p of inv.lista) if (p.sku.includes(q)) add(p, 'sku-parte');
+      if (q.length >= 5) for (const p of inv.lista) if (p.upcs.some(u => u.includes(q))) add(p, 'upc-parte');
+    }
+    const tk = sinTildes(q.toUpperCase()).split(/\s+/).filter(Boolean);
+    const cortada = (p, t) => p.cola && !/^\d+$/.test(t) && t.length > p.cola.length && t.startsWith(p.cola);
+    for (const p of inv.lista) if (tk.every(t => p.texto.includes(t) || cortada(p, t))) add(p, 'texto');
+    const exacto = res.length && (res[0].tipo === 'sku' || res[0].tipo === 'upc') ? res[0].p : null;
+    return { lista: res.slice(0, limite), total: res.length, exacto };
+  }
+
+  // ---------- PDF ----------
+  const f3 = v => String(Math.round(v * 1000) / 1000);
+  const f7 = v => String(Math.round(v * 1e7) / 1e7);
+  const ETQ_EM_ROTULO = 2.2;                   // tamaño (em, mm) del rótulo de la regla
+  async function deflate(bytes) {
+    if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') return null;
+    try {
+      const z = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+      // Safari 16.4-16.5 entrega datos truncados en salidas grandes: se comprueba antes de usarlo
+      const v = new Uint8Array(await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+      if (v.length !== bytes.length) return null;
+      for (let i = 0; i < v.length; i++) if (v[i] !== bytes[i]) return null;
+      return z;
+    } catch (e) { return null; }                 // sin compresión: el PDF sale igual, solo más pesado
+  }
+  /** etiquetas: lista ya expandida (una entrada por etiqueta impresa).
+      opciones.reglaMedida: cuánto midió la regla de 100 mm en una impresión de prueba (corrige impresoras que achican).
+      Devuelve Uint8Array del PDF. */
+  async function crearPDF(etiquetas, opciones = {}) {
+    const { columnas, filas } = SPEC, porHoja = columnas * filas;
+    const [PW, PH] = SPEC.pagina, W = SPEC.ancho * MM, H = SPEC.alto * MM;
+    const mx = (PW - columnas * W) / 2, my = (PH - filas * H) / 2;
+    const medida = Number(opciones.reglaMedida) || 100;
+    const esc = Math.min(1.07, Math.max(0.93, 100 / medida));   // ajuste de escala acotado a ±7 %
+    const usados = new Map();                  // 'ch|n' -> nombre del XObject
+    const glifo = (ch, negrita) => {
+      const key = ch + (negrita ? '|n' : '|r');
+      if (!usados.has(key)) usados.set(key, 'G' + usados.size);
+      return usados.get(key);
+    };
+    const paginas = [];
+    for (let i = 0; i < Math.max(etiquetas.length, 1); i += porHoja) {
+      const lote = etiquetas.slice(i, i + porHoja);
+      const c = [`q ${f7(esc)} 0 0 ${f7(esc)} ${f3(PW / 2 * (1 - esc))} ${f3(PH / 2 * (1 - esc))} cm`, '0 g 0 G'];
+      // regla de 100 mm en el margen izquierdo, para comprobar que la impresión sale a tamaño real
+      const rx = mx / 2, r0 = PH / 2 - 50 * MM;
+      c.push(`0 G ${f3(0.25 * MM)} w ${f3(rx)} ${f3(r0)} m ${f3(rx)} ${f3(r0 + 100 * MM)} l S`);
+      for (let k = 0; k <= 100; k += 5) {
+        const t = k % 50 === 0 ? 4 : k % 10 === 0 ? 2.5 : 1.2;
+        c.push(`${f3(rx)} ${f3(r0 + k * MM)} m ${f3(rx + t * MM)} ${f3(r0 + k * MM)} l S`);
+      }
+      const rotulo = 'REGLA 100 MM', kr = ETQ_EM_ROTULO * MM / 1000;     // texto vertical, de abajo hacia arriba
+      let yr = r0 + (100 * MM - anchoTexto(rotulo, ETQ_EM_ROTULO, false) * MM) / 2;
+      for (const ch of rotulo) {
+        if (G[ch] && G[ch].d) c.push(`q 0 ${f7(kr)} ${f7(-kr)} 0 ${f3(rx - 1.2 * MM)} ${f3(yr)} cm /${glifo(ch, false)} Do Q`);
+        yr += (G[ch] ? G[ch].a : 0) * kr;
+      }
+      c.push(`${SPEC.corte.gris} G ${f3(SPEC.corte.ancho * MM)} w`);
+      lote.forEach((_, j) => {
+        const col = j % columnas, fil = Math.floor(j / columnas);
+        c.push(`${f3(mx + col * W)} ${f3(PH - my - (fil + 1) * H)} ${f3(W)} ${f3(H)} re`);
+      });
+      c.push('S', '0 G');
+      lote.forEach((et, j) => {
+        const col = j % columnas, fil = Math.floor(j / columnas);
+        const ox = mx + col * W, oy = PH - my - fil * H;     // esquina superior izquierda
+        for (const g of componer(et).glifos) {
+          const k = g.em * MM / 1000;
+          c.push(`q ${f7(k)} 0 0 ${f7(k)} ${f3(ox + g.x * MM)} ${f3(oy - g.base * MM)} cm /${glifo(g.ch, g.negrita)} Do Q`);
+        }
+      });
+      c.push('Q');
+      paginas.push(c.join('\n'));
+    }
+    const enc = new TextEncoder(), partes = [], offs = [];
+    let pos = 0;
+    const push = b => { partes.push(b); pos += b.length; };
+    const obj = async (n, dict, stream) => {
+      offs[n] = pos;
+      if (stream === undefined) { push(enc.encode(`${n} 0 obj\n${dict}\nendobj\n`)); return; }
+      let data = enc.encode(stream), filtro = '';
+      const z = await deflate(data);
+      if (z) { data = z; filtro = ' /Filter /FlateDecode'; }
+      push(enc.encode(`${n} 0 obj\n<< ${dict} /Length ${data.length}${filtro} >>\nstream\n`));
+      push(data); push(enc.encode('\nendstream\nendobj\n'));
+    };
+    push(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a, 0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));   // %PDF-1.7
+    const nX = usados.size, primeraPag = 4 + nX;
+    const kids = paginas.map((_, i) => `${primeraPag + 2 * i} 0 R`).join(' ');
+    // pide a los visores imprimir sin «ajustar a la página» (Acrobat y Chrome lo respetan)
+    await obj(1, '<< /Type /Catalog /Pages 2 0 R /ViewerPreferences << /PrintScaling /None /PickTrayByPDFSize true >> >>');
+    await obj(2, `<< /Type /Pages /Kids [${kids}] /Count ${paginas.length} >>`);
+    const xo = [...usados.values()].map((nom, i) => `/${nom} ${4 + i} 0 R`).join(' ');
+    await obj(3, `<< /XObject << ${xo} >> >>`);
+    let i = 0;
+    for (const [key, nom] of usados) {
+      const [ch, est] = [key.slice(0, -2), key.slice(-1)];
+      const o = OPS[ch], m = 12, b = o.bbox;
+      const cuerpo = est === 'n' ? `1 j ${SPEC.negritaTrazo * 1000} w\n${o.ops}\nB` : `${o.ops}\nf`;
+      await obj(4 + i, `/Type /XObject /Subtype /Form /BBox [${b[0] - m} ${b[1] - m} ${b[2] + m} ${b[3] + m}] /Resources << >>`, cuerpo);
+      i++;
+    }
+    for (let p = 0; p < paginas.length; p++) {
+      const n = primeraPag + 2 * p;
+      await obj(n, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources 3 0 R /Contents ${n + 1} 0 R >>`);
+      await obj(n + 1, '', paginas[p]);
+    }
+    const total = primeraPag + 2 * paginas.length;
+    const xref = pos;
+    let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+    for (let n = 1; n < total; n++) x += String(offs[n]).padStart(10, '0') + ' 00000 n \n';
+    x += `trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    push(enc.encode(x));
+    const out = new Uint8Array(pos); let o = 0;
+    for (const b of partes) { out.set(b, o); o += b.length; }
+    return out;
+  }
+
+  /** Un código suelto (SKU o código de barras) exacto, o null. */
+  function porCodigo(inv, cod) {
+    cod = String(cod ?? '').trim();
+    if (!inv || !cod) return null;
+    return inv.porSku.get(cod) || inv.porSku.get(cod.replace(/^0+/, '')) || inv.porUpc.get(cod) ||
+           (cod.length === 12 ? inv.porUpc.get('0' + cod) : null) || null;
+  }
+  /** Precio escrito a mano: acepta 19990, 19.990, 19.990,00 y 19990,00. */
+  function leerPrecio(txt) {
+    const d = String(txt ?? '').trim().replace(/(,\d{1,2}|\.00)\s*$/, '').replace(/\D/g, '');
+    return d ? +d : null;
+  }
+  /** Una línea de carga masiva -> [[código, cantidad], ...]. «SKU cant» solo si la cantidad es de 1 a 3 dígitos. */
+  function lineaMasiva(linea) {
+    const t = String(linea ?? '').trim().split(/[\s;,]+/).filter(Boolean);
+    if (t.length === 2 && /^\d{1,3}$/.test(t[1])) return [[t[0], Math.max(1, Math.min(999, +t[1]))]];
+    return t.map(c => [c, 1]);
+  }
+
+  return { SPEC, init, normalizar, partirNombre, formatoPrecio, componer, svgEtiqueta, anchoTexto,
+           textoDeArchivo, _gunzip: gunzip, parsearInventario, localesDelInventario, indexar, buscar, porCodigo, leerPrecio, lineaMasiva, crearPDF, sinTildes };
+})();
+if (typeof module !== 'undefined') module.exports = ETQ;
+</script>
+
+<script id="ui">
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  ETQ.init(JSON.parse(document.getElementById('bebas').textContent));
+
+  // ---------- guardado local (si el navegador lo permite) ----------
+  const LS = {
+    get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* sin guardado */ } },
+  };
+  const DB = {
+    abrir() {
+      return new Promise((ok, mal) => {
+        const r = indexedDB.open('etiquetas-sku', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error);
+      });
+    },
+    async get(k) {
+      const db = await this.abrir();
+      return new Promise((ok, mal) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => ok(q.result); q.onerror = () => mal(q.error); });
+    },
+    async set(k, v) {
+      const db = await this.abrir();
+      return new Promise((ok, mal) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = () => ok(); t.onerror = () => mal(t.error); });
+    },
+    async borrar(k) {
+      const db = await this.abrir();
+      return new Promise((ok, mal) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = () => ok(); t.onerror = () => mal(t.error); });
+    },
+  };
+
+  let inv = null, infoInv = null, urlPdf = null;
+  let ultimoTexto = null;                              // archivo recién cargado (para «Cambiar tienda»)
+  let localElegido = LS.get('etq.local.v1', null);     // última tienda elegida
+
+  // ---------- tipo de teléfono, ajuste de impresión y navegador interno de apps ----------
+  // se consulta en el momento (no al abrir la página), igual que esTactil
+  const UA = () => navigator.userAgent || '';
+  const esAndroid = () => /Android/i.test(UA());
+  const esIOS = () => /iPhone|iPad|iPod/i.test(UA()) || (/Macintosh/.test(UA()) && navigator.maxTouchPoints > 1);
+  const enApp = () => (esAndroid() && /; wv\)/.test(UA())) || /FBAN|FBAV|Instagram|Line\/|LinkedInApp|Snapchat|TikTok/i.test(UA());
+  function pintarTelefono() {
+    const a = $('#aviso-app');
+    a.hidden = !enApp();
+    if (!a.hidden) a.textContent = esIOS()
+      ? 'Estás viendo la página dentro de una app. Para cargar el archivo y bajar el PDF, ábrela en Safari: toca ··· o el ícono de compartir → «Abrir en Safari».'
+      : 'Estás viendo la página dentro de una app. Para cargar el archivo y bajar el PDF, ábrela en Chrome: toca ⋮ → «Abrir en Chrome» (o «Abrir en el navegador»).';
+    const n = $('#nota-telefono');
+    if (esAndroid()) { n.hidden = false; n.innerHTML = '<b>Para imprimir en Android:</b> «Descargar PDF» → abre el PDF → ⋮ → Imprimir → en <b>Tamaño del papel</b> elige <b>Carta (Letter)</b>, no A4. La primera vez, mide la regla de 100 mm del borde (ver «Ajuste de impresión»).'; }
+    else if (esIOS()) { n.hidden = false; n.innerHTML = '<b>Para imprimir en iPhone:</b> «Abrir PDF» o «Compartir o imprimir» → Imprimir. El iPhone no deja elegir «tamaño real»: la primera vez imprime una hoja, mide la regla de 100 mm del borde y anótala en «Ajuste de impresión».'; }
+    else n.hidden = true;
+  }
+  pintarTelefono();
+  addEventListener('load', pintarTelefono);
+  let reglaMem = null;                                   // por si el navegador no deja guardar
+  function reglaMedida() { const v = Number(reglaMem ?? LS.get('etq.regla.v1', 100)); return v >= 93 && v <= 107 ? v : 100; }
+  function pintarAjuste() {
+    const v = reglaMedida(); $('#regla-medida').value = v;
+    $('#ajuste-txt').textContent = v === 100 ? 'Sin ajuste (100 %).' : `Ajuste activo: las hojas salen al ${(100 * 100 / v).toFixed(1).replace('.', ',')} % para compensar.`;
+  }
+  $('#regla-medida').addEventListener('change', ev => {
+    const v = Number(String(ev.target.value).replace(',', '.'));
+    reglaMem = v >= 93 && v <= 107 ? v : 100;
+    LS.set('etq.regla.v1', reglaMem);
+    pintarAjuste(); invalidarPdf(); pintarPasos();
+  });
+  pintarAjuste();
+  let lista = LS.get('etq.lista.v1', []);
+  let nombres = LS.get('etq.nombres.v1', {});
+  let sec = 1 + Math.max(0, ...lista.map(it => it.id || 0));
+  /** Cualquier cambio en la lista deja obsoleto el PDF ya generado. */
+  function invalidarPdf() {
+    for (const s of ['#lnk-pdf', '#lnk-desc']) { const l = $(s); l.hidden = true; l.removeAttribute('href'); }
+    $('#btn-compartir').hidden = true; archivoPdf = null;
+    if (urlPdf) { URL.revokeObjectURL(urlPdf); urlPdf = null; }
+  }
+  let archivoPdf = null;
+  // se consulta en el momento de usarla (no al abrir la página)
+  const esTactil = () => matchMedia('(pointer: coarse)').matches ||
+                         (navigator.maxTouchPoints > 0 && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent));
+  // en el celular el selector de archivos no filtra por tipo: algunos iPhone dejan el .gz en gris
+  $('label[for="archivo"]').addEventListener('click', () => {
+    const inp = $('#archivo');
+    if (esTactil()) inp.removeAttribute('accept'); else inp.setAttribute('accept', '.txt,.csv,.gz');
+  });
+  const guardarLista = () => { LS.set('etq.lista.v1', lista); invalidarPdf(); };
+  /** Guarda (o borra con null) el nombre corregido de un SKU, fusionando con lo que haya guardado otra pestaña. */
+  function guardarNombre(sku, valor) {
+    nombres = LS.get('etq.nombres.v1', nombres);
+    if (valor) nombres[sku] = valor; else delete nombres[sku];
+    LS.set('etq.nombres.v1', nombres); pintarNombres();
+  }
+  // otra pestaña con esta misma página cambió la lista o los nombres
+  addEventListener('storage', ev => {
+    if (ev.key === 'etq.nombres.v1') { nombres = LS.get('etq.nombres.v1', {}); pintarNombres(); pintarLista(); }
+    else if (ev.key === 'etq.lista.v1') {
+      lista = LS.get('etq.lista.v1', []);
+      sec = Math.max(sec, 1 + Math.max(0, ...lista.map(it => it.id || 0)));
+      if (inv) for (const it of lista) it.encontrado = inv.porSku.has(it.sku);
+      invalidarPdf(); pintarLista();
+    }
+  });
+
+  const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const miles = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  // ---------- inventario ----------
+  function fechaDeNombre(nombre) {
+    const m = /(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(nombre || '');
+    return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
+  }
+  function pintarInventario() {
+    const e = $('#estado-inv');
+    $('#btn-quitar-inv').hidden = !inv;
+    if (!inv) { e.className = 'estado-inv suave'; e.textContent = 'Sin inventario cargado.'; pintarPasos(); return; }
+    const f = infoInv.fecha ? new Date(infoInv.fecha) : null;
+    const dias = f ? Math.floor((Date.now() - f.getTime()) / 86400000) : null;
+    const fechaTxt = f ? f.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'sin fecha en el nombre';
+    let tienda = '';
+    if (infoInv.local) {
+      tienda = ` · tienda <b>${esc(infoInv.local)}</b>`;
+      if (infoInv.nLocales > 1) tienda += ` (el archivo trae ${infoInv.nLocales} tiendas) ` + (ultimoTexto
+        ? '<button class="chico" id="btn-cambiar-local">Cambiar tienda</button>'
+        : '<span class="suave">— para cambiarla, vuelve a cargar el archivo y usa «Cambiar tienda»</span>');
+    }
+    e.className = 'estado-inv';
+    e.innerHTML = `<span class="ok">✔</span> <b>${miles(inv.lista.length)}</b> SKU${tienda} · archivo <b>${esc(infoInv.nombre)}</b> · inventario del ${esc(fechaTxt)}` +
+      (dias !== null && dias >= 3 ? ` <span class="aviso">Tiene ${dias} días: revisa que sea el más reciente para que los precios estén al día.</span>` : '');
+    $('#buscar').disabled = false; $('#buscar').placeholder = 'SKU, código de barras o nombre…';
+    $('#btn-masivo').disabled = false;
+    pintarPasos(); pintarTelefono();
+  }
+  /** Muestra un botón por tienda y espera la elección. */
+  function elegirLocal(locales) {
+    return new Promise(ok => {
+      const caja = $('#elegir-local'), btns = $('#locales-btns');
+      btns.innerHTML = locales.map(x =>
+        `<button class="${x.local === localElegido ? 'primario' : ''}" data-local="${esc(x.local)}">Tienda ${esc(x.local)} · ${miles(x.skus)} SKU</button>`).join('');
+      caja.hidden = false;
+      btns.onclick = ev => {
+        const b = ev.target.closest('button[data-local]'); if (!b) return;
+        caja.hidden = true; btns.onclick = null; ok(b.dataset.local);
+      };
+      caja.scrollIntoView({ block: 'nearest' });
+    });
+  }
+  /** forzarEleccion: preguntar la tienda aunque haya una recordada («Cambiar tienda»). */
+  async function cargarTexto(texto, nombre, forzarEleccion = false) {
+    const locales = ETQ.localesDelInventario(texto);
+    let local = locales.length === 1 ? locales[0].local : null;
+    if (locales.length > 1) {
+      const recordado = locales.some(x => x.local === localElegido) ? localElegido : null;
+      if (recordado && !forzarEleccion) local = recordado;
+      else {
+        const e = $('#estado-inv'); e.className = 'estado-inv aviso'; e.textContent = 'Elige la tienda para terminar de cargar el inventario.';
+        local = await elegirLocal(locales);
+      }
+      localElegido = local; LS.set('etq.local.v1', local);
+    }
+    const productos = ETQ.parsearInventario(texto, local);
+    if (!productos.length) throw new Error('El archivo no trae productos.');
+    ultimoTexto = texto;
+    const f = fechaDeNombre(nombre);
+    infoInv = { nombre, fecha: f ? f.getTime() : null, cargado: Date.now(), local, nLocales: locales.length };
+    inv = ETQ.indexar(productos);
+    // los precios no editados a mano se actualizan con el inventario nuevo
+    for (const it of lista) {
+      const p = inv.porSku.get(it.sku);
+      it.encontrado = !!p;
+      if (p) {
+        // nombre nunca corregido a mano: se rearma si el inventario trae otra descripción
+        if (!nombres[it.sku] && p.desc !== it.desc) { const a = ETQ.partirNombre(p.desc); it.l1 = a.l1; it.l2 = a.l2; }
+        it.desc = p.desc;
+        if (!it.precioManual) it.precio = p.precio;
+      }
+    }
+    guardarLista(); pintarInventario(); pintarLista();
+    try {
+      await DB.set('inventario', { info: infoInv, productos: productos.map(({ texto, cola, ...r }) => r) });
+      // pide al navegador no borrar lo guardado (Chrome y Safari lo conceden según uso)
+      if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    } catch (e) {
+      const e2 = $('#estado-inv');
+      e2.insertAdjacentHTML('beforeend', ' <span class="aviso">No se pudo guardar el inventario en este equipo: la próxima vez habrá que cargarlo de nuevo.</span>');
+    }
+    $('#buscar').focus();
+  }
+  async function cargarArchivo(file) {
+    const e = $('#estado-inv');
+    e.className = 'estado-inv suave'; e.textContent = 'Leyendo ' + file.name + '…';
+    try {
+      const texto = await ETQ.textoDeArchivo(new Uint8Array(await file.arrayBuffer()));
+      await cargarTexto(texto, file.name);
+    } catch (err) {
+      e.className = 'estado-inv error'; e.textContent = 'No se pudo leer el archivo: ' + err.message;
+    }
+  }
+  $('#archivo').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) cargarArchivo(f); ev.target.value = ''; });
+  $('#btn-quitar-inv').addEventListener('click', async () => {
+    if (!confirm('¿Quitar el inventario guardado en este navegador?\nTu lista y los nombres corregidos se mantienen. Después cargas el archivo de nuevo.')) return;
+    inv = null; infoInv = null; ultimoTexto = null;
+    try { await DB.borrar('inventario'); } catch (e) { /* sin caché */ }
+    const b = $('#buscar');
+    b.value = ''; b.disabled = true; b.placeholder = 'Primero carga el inventario (paso 1)';
+    $('#btn-masivo').disabled = true; $('#resultados').innerHTML = ''; $('#msg-buscar').innerHTML = '';
+    $('#elegir-local').hidden = true;
+    invalidarPdf(); pintarInventario(); pintarLista();
+  });
+  $('#estado-inv').addEventListener('click', async ev => {
+    if (!ev.target.closest('#btn-cambiar-local') || !ultimoTexto) return;
+    try { await cargarTexto(ultimoTexto, infoInv.nombre, true); }
+    catch (err) { const e = $('#estado-inv'); e.className = 'estado-inv error'; e.textContent = 'No se pudo cambiar la tienda: ' + err.message; }
+  });
+  let arrastre = 0;
+  addEventListener('dragenter', ev => { if (ev.dataTransfer?.types?.includes('Files')) { arrastre++; $('#zona-drop').classList.add('activa'); } });
+  addEventListener('dragleave', () => { if (--arrastre <= 0) { arrastre = 0; $('#zona-drop').classList.remove('activa'); } });
+  addEventListener('dragover', ev => ev.preventDefault());
+  addEventListener('drop', ev => {
+    ev.preventDefault(); arrastre = 0; $('#zona-drop').classList.remove('activa');
+    const f = ev.dataTransfer?.files?.[0];
+    if (f) { if (/\.json$/i.test(f.name)) importarNombres(f); else cargarArchivo(f); }
+  });
+
+  // ---------- búsqueda ----------
+  const TIPO = { 'sku': 'SKU exacto', 'upc': 'Código de barras', 'sku-inicio': 'SKU', 'sku-parte': 'SKU', 'upc-parte': 'Cód. barras', 'texto': 'Nombre' };
+  let ultimo = { lista: [], exacto: null };
+  function pintarResultados() {
+    const q = $('#buscar').value;
+    const r = ETQ.buscar(inv, q);
+    ultimo = r;
+    const cont = $('#resultados'), msg = $('#msg-buscar');
+    msg.innerHTML = '';
+    if (!q.trim()) { cont.innerHTML = ''; return; }
+    if (!r.total) { cont.innerHTML = ''; msg.innerHTML = `<div class="error" style="margin-top:8px">No se encontró «${esc(q.trim())}» en el inventario.</div>`; return; }
+    const filas = r.lista.map(({ p, tipo }, i) =>
+      `<tr class="${i === 0 && r.exacto ? 'exacto' : ''}"><td class="num r-sku">${esc(p.sku)}</td><td class="r-desc">${esc(p.desc)}</td><td class="r-marca">${esc(p.marca)}</td>` +
+      `<td class="num r-precio">${esc(ETQ.formatoPrecio(p.precio))}</td><td class="num r-stock">${p.stock === null ? '' : miles(p.stock)}</td>` +
+      `<td class="suave r-tipo" style="font-size:12px">${TIPO[tipo]}</td><td class="r-acc"><button class="chico" data-sku="${esc(p.sku)}">Agregar</button></td></tr>`).join('');
+    cont.innerHTML = `<table><thead><tr><th class="num">SKU</th><th>Producto</th><th>Marca</th><th class="num">Precio</th><th class="num">Stock</th><th>Coincide por</th><th></th></tr></thead><tbody>${filas}</tbody></table>` +
+      (r.total > r.lista.length ? `<div class="pie-res">Mostrando ${r.lista.length} de ${miles(r.total)}. Escribe más para afinar.</div>` : '');
+  }
+  let tBuscar = 0;
+  $('#buscar').addEventListener('input', () => { clearTimeout(tBuscar); tBuscar = setTimeout(pintarResultados, 120); });
+  $('#buscar').addEventListener('keydown', ev => {
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault(); clearTimeout(tBuscar); pintarResultados();
+    // con números solo se agrega si el SKU o código de barras calza exacto (evita agregar otro producto al escanear)
+    const numerico = /^\d+$/.test($('#buscar').value.trim());
+    const p = ultimo.exacto || (!numerico && ultimo.total === 1 ? ultimo.lista[0].p : null);
+    if (p) { agregar(p, 1); $('#buscar').value = ''; pintarResultados(); }
+  });
+  $('#resultados').addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-sku]'); if (!b) return;
+    agregar(inv.porSku.get(b.dataset.sku), 1);
+    // en el celular no se vuelve al buscador: abriría el teclado y movería la pantalla en cada toque
+    if (esTactil()) { b.textContent = '✓ Agregado'; } else { $('#buscar').focus(); $('#buscar').select(); }
+  });
+  $('#btn-masivo').addEventListener('click', () => {
+    const pendientes = []; let n = 0;
+    for (const linea of $('#masivo').value.split(/\r?\n/)) {
+      const enLinea = new Set();          // SKU y código de barras del mismo producto en una línea cuentan una vez
+      for (const [cod, cant] of ETQ.lineaMasiva(linea)) {
+        const p = ETQ.porCodigo(inv, cod);
+        if (!p) { pendientes.push(cant > 1 ? `${cod} ${cant}` : cod); continue; }
+        if (enLinea.has(p.sku)) continue;
+        enLinea.add(p.sku); agregar(p, cant, false); n++;
+      }
+    }
+    pintarLista();
+    $('#masivo').value = pendientes.join('\n');   // quedan solo los no encontrados, para corregirlos sin duplicar
+    $('#msg-masivo').innerHTML = `<span class="ok">${n} agregado${n === 1 ? '' : 's'}.</span>` +
+      (pendientes.length ? ` <span class="error">No encontrados (quedaron en el cuadro): ${esc(pendientes.join(', '))}</span>` : '');
+  });
+
+  // ---------- lista ----------
+  function agregar(p, cant = 1, pintar = true) {
+    if (!p) return;
+    const ya = lista.find(it => it.sku === p.sku);
+    if (ya) ya.cant = Math.min(999, (ya.cant || 0) + cant);
+    else {
+      const g = nombres[p.sku], auto = ETQ.partirNombre(p.desc);
+      lista.push({ id: sec++, sku: p.sku, desc: p.desc, l1: g ? g[0] : auto.l1, l2: g ? g[1] : auto.l2,
+                   precio: p.precio, precioManual: false, cant, encontrado: true });
+    }
+    guardarLista();
+    if (pintar) {
+      pintarLista();
+      if (!esTactil()) document.querySelector(`.item[data-id="${(ya || lista[lista.length - 1]).id}"]`)?.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  /** Precio escrito a mano que no calza con el inventario cargado y que aún no se revisó contra ESTE inventario.
+      Devuelve el producto del inventario (con su precio) o null. */
+  function precioDistinto(it) {
+    const p = inv ? inv.porSku.get(it.sku) : null;
+    return p && infoInv && it.precioManual && it.precio !== p.precio && it.precioRevisadoEn !== infoInv.cargado ? p : null;
+  }
+  function avisosItem(it) {
+    const a = [];
+    if (inv && !it.encontrado) a.push(['error', 'Este SKU no está en el inventario cargado']);
+    const pi = precioDistinto(it);
+    if (pi) {
+      const mio = ETQ.formatoPrecio(it.precio) || 'vacío', delInv = ETQ.formatoPrecio(pi.precio);
+      a.push(['aviso', `Tu precio escrito a mano (${mio}) no coincide con el inventario (${delInv})`,
+              [['usar-inv', `Usar ${delInv}`], ['mantener', `Mantener ${mio}`]]]);
+    }
+    if (!nombres[it.sku] && (it.desc || '').length >= 28) a.push(['aviso', 'El nombre viene cortado del inventario (28 caracteres): revísalo']);
+    for (const t of ETQ.componer(it).avisos) a.push(['aviso', t]);
+    return a;
+  }
+  const htmlAvisos = it => avisosItem(it).map(([c, t, acc]) =>
+    `<span class="${c}">${esc(t)}${(acc || []).map(([a, l]) => ` <button class="chico" data-a="${a}">${esc(l)}</button>`).join('')}</span>`).join('');
+  function htmlItem(it) {
+    const av = htmlAvisos(it);
+    const precio = it.precio === null || it.precio === undefined || it.precio === '' ? '' : miles(it.precio);
+    return `<div class="item${inv && !it.encontrado ? ' no-encontrado' : ''}" data-id="${it.id}">
+      <div class="prev-cont">${ETQ.svgEtiqueta(it).replace('<svg ', '<svg class="prev" ')}</div>
+      <div class="campos">
+        <label class="c-l1">Línea 1<input type="text" data-f="l1" value="${esc(it.l1)}" spellcheck="false"></label>
+        <label class="c-l2">Línea 2<input type="text" data-f="l2" value="${esc(it.l2)}" spellcheck="false"></label>
+        <label class="c-sku">SKU<span class="sku-txt">${esc(it.sku)}</span></label>
+        <label class="c-precio">Precio<input type="text" inputmode="numeric" data-f="precio" value="${precio}"></label>
+        <label class="c-cant">Cantidad<input type="number" min="0" max="999" data-f="cant" value="${it.cant}"></label>
+        <div class="c-acc"><button class="chico" data-a="restaurar" title="Volver al nombre y precio del inventario">Restaurar</button><button class="chico" data-a="quitar">Quitar</button></div>
+        <div class="avisos">${av}</div>
+      </div></div>`;
+  }
+  function pintarTotales() {
+    const n = lista.reduce((s, it) => s + (it.cant > 0 ? it.cant : 0), 0);
+    const porHoja = ETQ.SPEC.columnas * ETQ.SPEC.filas;
+    $('#total').textContent = `${miles(n)} etiqueta${n === 1 ? '' : 's'}`;
+    $('#hojas').textContent = n ? `→ ${Math.ceil(n / porHoja)} hoja${Math.ceil(n / porHoja) === 1 ? '' : 's'} carta (${porHoja} por hoja)` : '';
+    $('#btn-pdf').disabled = !n;
+    pintarPasos();
+  }
+
+  // ---------- guía de pasos: se marca sola según el avance ----------
+  const TXT_PASO3 = 'Nombre, cantidad y precio';
+  function porRevisar(it) {
+    return (inv && !it.encontrado) || (!nombres[it.sku] && (it.desc || '').length >= 28) ||
+           it.precio === null || it.precio === undefined || it.precio === '' || !!precioDistinto(it);
+  }
+  function pintarPasos() {
+    const activos = lista.filter(it => it.cant > 0);
+    const pend = activos.filter(porRevisar).length;
+    const hecho = [!!inv, activos.length > 0, activos.length > 0 && pend === 0, !!urlPdf];
+    const actual = hecho.indexOf(false);
+    document.querySelectorAll('.paso').forEach((el, i) => {
+      el.classList.toggle('hecho', hecho[i]);
+      el.classList.toggle('actual', i === actual);
+      el.querySelector('.n').textContent = hecho[i] ? '✓' : String(i + 1);
+    });
+    const s3 = document.querySelector('.paso[data-paso="3"] small');
+    s3.textContent = pend ? `Falta${pend === 1 ? '' : 'n'} ${pend} por revisar` : TXT_PASO3;
+    s3.classList.toggle('pend', pend > 0);
+  }
+  $('#pasos').addEventListener('click', ev => {
+    const p = ev.target.closest('.paso');
+    if (p && p.dataset.paso === '2' && !$('#buscar').disabled) {
+      ev.preventDefault();
+      $('#sec-buscar').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      $('#buscar').focus({ preventScroll: true });
+    }
+  });
+  function pintarLista() {
+    $('#items').innerHTML = lista.length ? lista.map(htmlItem).join('') :
+      '<div class="vacio">La lista está vacía. Busca un SKU y presiona Enter o «Agregar».</div>';
+    pintarTotales();
+  }
+  function refrescarItem(it) {
+    const el = document.querySelector(`.item[data-id="${it.id}"]`); if (!el) return;
+    el.querySelector('.prev-cont').innerHTML = ETQ.svgEtiqueta(it).replace('<svg ', '<svg class="prev" ');
+    el.querySelector('.avisos').innerHTML = htmlAvisos(it);
+    pintarTotales();
+  }
+  $('#items').addEventListener('input', ev => {
+    const inp = ev.target.closest('input[data-f]'); if (!inp) return;
+    const it = lista.find(x => x.id === +inp.closest('.item').dataset.id); if (!it) return;
+    const f = inp.dataset.f;
+    if (f === 'l1' || f === 'l2') {
+      it[f] = inp.value.toUpperCase();
+      guardarNombre(it.sku, [it.l1, it.l2]);
+    } else if (f === 'precio') {
+      it.precio = ETQ.leerPrecio(inp.value); it.precioManual = true;
+      it.precioRevisadoEn = infoInv ? infoInv.cargado : null;   // revisado contra el inventario actual
+    } else if (f === 'cant') {
+      const v = Number(inp.value);
+      it.cant = Number.isFinite(v) ? Math.max(0, Math.min(999, Math.floor(v))) : 0;
+    }
+    guardarLista(); refrescarItem(it);
+  });
+  $('#items').addEventListener('change', ev => {
+    // al salir del campo, mostrar exactamente lo que se va a imprimir
+    const inp = ev.target.closest('input[data-f="precio"], input[data-f="cant"]'); if (!inp) return;
+    const it = lista.find(x => x.id === +inp.closest('.item').dataset.id); if (!it) return;
+    if (inp.dataset.f === 'precio') inp.value = it.precio === null ? '' : miles(it.precio);
+    else inp.value = it.cant;
+  });
+  $('#items').addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-a]'); if (!b) return;
+    const id = +b.closest('.item').dataset.id, it = lista.find(x => x.id === id); if (!it) return;
+    if (b.dataset.a === 'quitar') lista = lista.filter(x => x.id !== id);
+    else if (b.dataset.a === 'usar-inv') {
+      const p = inv?.porSku.get(it.sku);
+      if (p) { it.precio = p.precio; it.precioManual = false; }
+    }
+    else if (b.dataset.a === 'mantener') it.precioRevisadoEn = infoInv ? infoInv.cargado : null;
+    else if (b.dataset.a === 'restaurar') {
+      guardarNombre(it.sku, null);
+      const p = inv?.porSku.get(it.sku), a = ETQ.partirNombre(p ? p.desc : it.desc);
+      it.l1 = a.l1; it.l2 = a.l2;
+      if (p) { it.precio = p.precio; it.precioManual = false; }
+    }
+    guardarLista(); pintarLista();
+  });
+  $('#btn-vaciar').addEventListener('click', () => {
+    if (!lista.length || !confirm('¿Vaciar la lista? Los nombres corregidos quedan guardados.')) return;
+    lista = []; guardarLista(); pintarLista();
+  });
+
+  // ---------- PDF ----------
+  $('#btn-pdf').addEventListener('click', async () => {
+    const b = $('#btn-pdf'); b.disabled = true; const txt = b.textContent; b.textContent = 'Generando…';
+    try {
+      const etiquetas = [];
+      for (const it of lista) for (let i = 0; i < (it.cant || 0); i++) etiquetas.push(it);
+      const bytes = await ETQ.crearPDF(etiquetas, { reglaMedida: reglaMedida() });
+      if (urlPdf) URL.revokeObjectURL(urlPdf);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      urlPdf = URL.createObjectURL(blob);
+      const d = new Date(), z = n => String(n).padStart(2, '0');
+      const nombre = `etiquetas_${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}.pdf`;
+      // en el PC se descarga solo; en el celular se ofrecen botones (descargar sin tocar un botón falla en iPhone)
+      const tactil = esTactil();
+      if (!tactil) { const a = document.createElement('a'); a.href = urlPdf; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
+      // Android: Chrome a veces no muestra PDF en una pestaña; mejor «Descargar PDF» y abrirlo desde el aviso de descarga
+      const android = esAndroid();
+      const l = $('#lnk-pdf'); l.href = urlPdf; l.hidden = android;
+      const dl = $('#lnk-desc'); dl.href = urlPdf; dl.download = nombre; dl.hidden = !tactil && !android;
+      dl.textContent = android ? 'Descargar PDF' : 'Descargar';
+      dl.classList.toggle('primario', android);
+      try {
+        archivoPdf = new File([blob], nombre, { type: 'application/pdf' });
+        const bc = $('#btn-compartir');
+        bc.textContent = android ? 'Compartir' : 'Compartir o imprimir';
+        bc.hidden = !(navigator.canShare && navigator.canShare({ files: [archivoPdf] }));
+      } catch (e) { archivoPdf = null; }
+    } catch (err) {
+      alert('No se pudo generar el PDF: ' + err.message);
+    } finally { b.textContent = txt; pintarTotales(); }
+  });
+
+  $('#btn-compartir').addEventListener('click', () => {
+    if (archivoPdf && navigator.share) navigator.share({ files: [archivoPdf], title: 'Etiquetas de precio' }).catch(() => {});
+  });
+
+  // ---------- nombres guardados ----------
+  function pintarNombres() { const n = Object.keys(nombres).length; $('#n-nombres').textContent = `${n} nombre${n === 1 ? '' : 's'} corregido${n === 1 ? '' : 's'} en este navegador.`; }
+  $('#btn-exportar').addEventListener('click', () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(nombres, null, 1)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = 'nombres_etiquetas.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  });
+  async function importarNombres(file) {
+    try {
+      const d = JSON.parse(await file.text()), nuevos = {};
+      for (const [sku, v] of Object.entries(d))
+        if (Array.isArray(v) && v.length === 2) nuevos[sku] = [String(v[0]).toUpperCase(), String(v[1]).toUpperCase()];
+      nombres = { ...LS.get('etq.nombres.v1', nombres), ...nuevos };
+      LS.set('etq.nombres.v1', nombres); pintarNombres();
+      let enLista = 0;                                   // aplicar también a lo que ya está en la lista
+      for (const it of lista) if (nuevos[it.sku]) { [it.l1, it.l2] = nuevos[it.sku]; enLista++; }
+      guardarLista(); pintarLista();
+      alert(`${Object.keys(nuevos).length} nombres importados` + (enLista ? ` (${enLista} aplicados a la lista actual).` : '.'));
+    } catch (e) { alert('El archivo de nombres no es válido.'); }
+  }
+  $('#imp-nombres').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) importarNombres(f); ev.target.value = ''; });
+
+  // ---------- inicio ----------
+  pintarNombres(); pintarLista();
+  DB.get('inventario').then(d => {
+    if (!d || inv) return;
+    infoInv = d.info; inv = ETQ.indexar(d.productos);
+    for (const it of lista) it.encontrado = inv.porSku.has(it.sku);
+    pintarInventario(); pintarLista();
+  }).catch(() => {});
+  window.etqCargarTexto = cargarTexto;     // para pruebas automáticas
+})();
+</script>
+</body>
+</html>
