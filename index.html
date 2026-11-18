@@ -128,7 +128,7 @@
 <div id="aviso-app" hidden></div>
 <header>
   <h1>Etiquetas de precio</h1>
-  <p>Busca por SKU, arma la lista e imprime en hoja carta (30 × 20 mm, 78 por hoja).</p>
+  <p>Busca por SKU, arma la lista e imprime en hoja carta (30 × 20 mm, 50 por hoja con espacio para cortar).</p>
 </header>
 <main>
   <nav id="pasos" aria-label="Cómo se usa">
@@ -231,7 +231,8 @@ const ETQ = (() => {
     anchoMax: 28.0,                         // ancho útil de texto (mm)
     negritaAvance: 0.02,                    // negrita simulada de Windows: +2 % del em por carácter
     negritaTrazo: 0.01,                     // y contorno de 1 % del em
-    columnas: 6, filas: 13,                 // 78 etiquetas por hoja carta
+    columnas: 5, filas: 10,                 // 50 etiquetas por hoja carta
+    separacion: 6,                          // mm de espacio entre etiquetas (para cortar)
     pagina: [612, 792],                     // carta en puntos
     corte: { ancho: 0.2, gris: 0.55 },      // líneas de corte (mm, gris 0-1)
   };
@@ -572,7 +573,8 @@ const ETQ = (() => {
   async function crearPDF(etiquetas, opciones = {}) {
     const { columnas, filas } = SPEC, porHoja = columnas * filas;
     const [PW, PH] = SPEC.pagina, W = SPEC.ancho * MM, H = SPEC.alto * MM;
-    const mx = (PW - columnas * W) / 2, my = (PH - filas * H) / 2;
+    const S = (SPEC.separacion || 0) * MM;                       // espacio entre etiquetas
+    const mx = (PW - columnas * W - (columnas - 1) * S) / 2, my = (PH - filas * H - (filas - 1) * S) / 2;
     const medida = Number(opciones.reglaMedida) || 100;
     const esc = Math.min(1.07, Math.max(0.93, 100 / medida));   // ajuste de escala acotado a ±7 %
     const usados = new Map();                  // 'ch|n' -> nombre del XObject
@@ -601,12 +603,12 @@ const ETQ = (() => {
       c.push(`${SPEC.corte.gris} G ${f3(SPEC.corte.ancho * MM)} w`);
       lote.forEach((_, j) => {
         const col = j % columnas, fil = Math.floor(j / columnas);
-        c.push(`${f3(mx + col * W)} ${f3(PH - my - (fil + 1) * H)} ${f3(W)} ${f3(H)} re`);
+        c.push(`${f3(mx + col * (W + S))} ${f3(PH - my - fil * (H + S) - H)} ${f3(W)} ${f3(H)} re`);
       });
       c.push('S', '0 G');
       lote.forEach((et, j) => {
         const col = j % columnas, fil = Math.floor(j / columnas);
-        const ox = mx + col * W, oy = PH - my - fil * H;     // esquina superior izquierda
+        const ox = mx + col * (W + S), oy = PH - my - fil * (H + S);     // esquina superior izquierda
         for (const g of componer(et).glifos) {
           const k = g.em * MM / 1000;
           c.push(`q ${f7(k)} 0 0 ${f7(k)} ${f3(ox + g.x * MM)} ${f3(oy - g.base * MM)} cm /${glifo(g.ch, g.negrita)} Do Q`);
@@ -830,7 +832,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   }
   function pintarInventario() {
     const e = $('#estado-inv');
-    $('#btn-quitar-inv').hidden = !infoInv;
+    $('#btn-quitar-inv').hidden = !infoInv || infoInv.origen === 'base';
     pintarPrecarga();
     if (!infoInv) {
       e.className = 'estado-inv suave';
@@ -849,7 +851,10 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     }
     e.className = 'estado-inv';
     const nInv = inv.lista.filter(p => !p.soloPrecarga).length;
-    e.innerHTML = `<span class="ok">✔</span> <b>${miles(nInv)}</b> SKU${tienda} · archivo <b>${esc(infoInv.nombre)}</b> · inventario del ${esc(fechaTxt)}` +
+    const fuente = infoInv.origen === 'base'
+      ? `inventario <b>incluido en la página</b> (para usar uno más nuevo, carga el archivo)`
+      : `archivo <b>${esc(infoInv.nombre)}</b>`;
+    e.innerHTML = `<span class="ok">✔</span> <b>${miles(nInv)}</b> SKU${tienda} · ${fuente} · inventario del ${esc(fechaTxt)}` +
       (dias !== null && dias >= 3 ? ` <span class="aviso">Tiene ${dias} días: revisa que sea el más reciente para que los precios estén al día.</span>` : '');
     activarBusqueda(true);
     pintarPasos(); pintarTelefono();
@@ -868,6 +873,37 @@ if (typeof module !== 'undefined') module.exports = ETQ;
       caja.scrollIntoView({ block: 'nearest' });
     });
   }
+  /** Deja activo un inventario (del link o de un archivo) y pone al día la lista. */
+  function aplicarInventario(productos, info) {
+    infoInv = info;
+    inv = ETQ.indexar(ETQ.combinar(productos, PRE));
+    // los precios no editados a mano se actualizan con el inventario nuevo
+    for (const it of lista) {
+      const p = inv.porSku.get(it.sku);
+      it.encontrado = !!p;
+      if (p && !p.soloPrecarga) {
+        // nombre nunca corregido a mano: se rearma si el inventario trae otra descripción
+        if (!nombres[it.sku] && p.desc !== it.desc) { const a = ETQ.partirNombre(p.desc); it.l1 = a.l1; it.l2 = a.l2; }
+        it.desc = p.desc;
+        if (!it.precioManual) it.precio = p.precio;
+      }
+    }
+    guardarLista(); pintarInventario(); pintarLista();
+  }
+  /** Inventario que viene publicado junto a la página (inventario_base.json). Solo existe en el link web. */
+  let base = null;
+  async function leerBase() {
+    try {
+      const r = await fetch('inventario_base.json', { cache: 'no-cache' });
+      if (!r.ok) return null;
+      const d = await r.json();
+      const i = d.campos.reduce((o, c, k) => (o[c] = k, o), {});
+      const productos = d.productos.map(x => ({ sku: x[i.sku], desc: x[i.desc], marca: x[i.marca], precio: x[i.precio],
+        stock: i.stock !== undefined ? x[i.stock] : null, upcs: x[i.upcs] ? String(x[i.upcs]).split(' ') : [] }));
+      const fecha = d.fecha ? new Date(d.fecha).getTime() : null;
+      return { productos, info: { nombre: d.nombre, fecha, cargado: 'base-' + (fecha || 0), local: d.local, nLocales: 1, origen: 'base' } };
+    } catch (e) { return null; }                       // abierta como archivo local o sin internet: no hay base
+  }
   /** forzarEleccion: preguntar la tienda aunque haya una recordada («Cambiar tienda»). */
   async function cargarTexto(texto, nombre, forzarEleccion = false) {
     const locales = ETQ.localesDelInventario(texto);
@@ -885,20 +921,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     if (!productos.length) throw new Error('El archivo no trae productos.');
     ultimoTexto = texto;
     const f = fechaDeNombre(nombre);
-    infoInv = { nombre, fecha: f ? f.getTime() : null, cargado: Date.now(), local, nLocales: locales.length };
-    inv = ETQ.indexar(ETQ.combinar(productos, PRE));
-    // los precios no editados a mano se actualizan con el inventario nuevo
-    for (const it of lista) {
-      const p = inv.porSku.get(it.sku);
-      it.encontrado = !!p;
-      if (p) {
-        // nombre nunca corregido a mano: se rearma si el inventario trae otra descripción
-        if (!nombres[it.sku] && p.desc !== it.desc) { const a = ETQ.partirNombre(p.desc); it.l1 = a.l1; it.l2 = a.l2; }
-        it.desc = p.desc;
-        if (!it.precioManual) it.precio = p.precio;
-      }
-    }
-    guardarLista(); pintarInventario(); pintarLista();
+    aplicarInventario(productos, { nombre, fecha: f ? f.getTime() : null, cargado: Date.now(), local, nLocales: locales.length, origen: 'archivo' });
     try {
       await DB.set('inventario', { info: infoInv, productos: productos.map(({ texto, cola, ...r }) => r) });
       // pide al navegador no borrar lo guardado (Chrome y Safari lo conceden según uso)
@@ -921,14 +944,19 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   }
   $('#archivo').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) cargarArchivo(f); ev.target.value = ''; });
   $('#btn-quitar-inv').addEventListener('click', async () => {
-    if (!confirm('¿Quitar el inventario guardado en este navegador?\nTu lista y los nombres corregidos se mantienen. Después cargas el archivo de nuevo.')) return;
-    infoInv = null; ultimoTexto = null;
-    inv = indicePre();                                   // quedan solo los SKU precargados
+    if (!confirm(base ? '¿Quitar el inventario que cargaste en este navegador?\nSe vuelve a usar el inventario incluido en la página. Tu lista y los nombres corregidos se mantienen.'
+                      : '¿Quitar el inventario guardado en este navegador?\nTu lista y los nombres corregidos se mantienen. Después cargas el archivo de nuevo.')) return;
+    ultimoTexto = null;
     try { await DB.borrar('inventario'); } catch (e) { /* sin caché */ }
     $('#buscar').value = ''; $('#resultados').innerHTML = ''; $('#msg-buscar').innerHTML = '';
-    for (const it of lista) it.encontrado = !!(inv && inv.porSku.has(it.sku));
     $('#elegir-local').hidden = true;
-    invalidarPdf(); pintarInventario(); pintarLista();
+    if (base) { aplicarInventario(base.productos, base.info); }             // vuelve el inventario del link
+    else {
+      infoInv = null; inv = indicePre();                                     // quedan solo los SKU precargados
+      for (const it of lista) it.encontrado = !!(inv && inv.porSku.has(it.sku));
+      pintarInventario(); pintarLista();
+    }
+    invalidarPdf();
   });
   $('#estado-inv').addEventListener('click', async ev => {
     if (!ev.target.closest('#btn-cambiar-local') || !ultimoTexto) return;
@@ -1221,12 +1249,14 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   // ---------- inicio ----------
   inv = indicePre();
   pintarNombres(); pintarInventario(); pintarLista();
-  DB.get('inventario').then(d => {
-    if (!d || infoInv) return;
-    infoInv = d.info; inv = ETQ.indexar(ETQ.combinar(d.productos, PRE));
-    for (const it of lista) it.encontrado = inv.porSku.has(it.sku);
-    pintarInventario(); pintarLista();
-  }).catch(() => {});
+  // inventario guardado en este navegador vs. el incluido en el link: manda el más reciente (si empatan, el propio)
+  Promise.all([DB.get('inventario').catch(() => null), leerBase()]).then(([d, b]) => {
+    base = b;
+    if (infoInv) return;                                  // ya se cargó un archivo mientras tanto
+    const fd = d && d.info ? (d.info.fecha || 0) : -1, fb = b ? (b.info.fecha || 0) : -1;
+    if (d && fd >= fb) { d.info.origen = d.info.origen || 'archivo'; aplicarInventario(d.productos, d.info); }
+    else if (b) aplicarInventario(b.productos, b.info);
+  });
   window.etqCargarTexto = cargarTexto;     // para pruebas automáticas
 })();
 </script>
