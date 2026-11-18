@@ -48,6 +48,7 @@
   .suave { color: var(--suave); }
   .estado-inv { margin-top: 8px; overflow-wrap: anywhere; }
   .estado-inv b { font-variant-numeric: tabular-nums; }
+  .precarga { margin-top: 10px; padding: 8px 12px; border: 1px dashed var(--borde); border-radius: 8px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 14px; }
   .elegir-local { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--acento); border-radius: 8px; background: var(--fila); }
   .aviso { background: var(--aviso-fondo); color: var(--aviso); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
   .error { background: var(--error-fondo); color: var(--error); border-radius: 7px; padding: 6px 10px; font-size: 13px; }
@@ -160,6 +161,10 @@
     <input id="buscar" type="search" placeholder="Primero carga el inventario (paso 1)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" disabled>
     <div class="nota">Enter (en el celular, «Ir») agrega el producto cuando el SKU o el código de barras calza exacto (sirve con lector de códigos).</div>
     <div id="msg-buscar"></div>
+    <div id="caja-precarga" class="precarga" hidden>
+      <span><b id="precarga-nombre"></b>: <span id="precarga-txt"></span></span>
+      <button id="btn-precarga" class="chico">Agregar todos a la lista</button>
+    </div>
     <div id="resultados"></div>
     <details>
       <summary>Agregar varios SKU de una vez</summary>
@@ -207,6 +212,8 @@
 <div id="zona-drop">Suelta el archivo de inventario</div>
 
 <script id="bebas" type="application/json">{"upm":1000,"cap":700,"glyphs":{" ":{"a":200,"d":""},"!":{"a":226,"d":"M60 700L60 479L78 180L148 180L166 479L166 700ZM60 106L60 0L166 0L166 106Z"},"\"":{"a":354,"d":"M67 490L132 490L153 700L45 700ZM222 490L287 490L308 700L200 700Z"},"#":{"a":467,"d":"M65 0L153 0L173 189L256 189L237 0L325 0L344 189L399 189L408 268L352 268L373 476L428 476L436 555L380 555L394 700L307 700L293 555L210 555L224 700L137 700L122 555L66 555L58 476L114 476L93 268L38 268L31 189L86 189ZM180 268L201 476L285 476L265 268Z"},"$":{"a":436,"d":"M389 182C389 271 324 333 261 387C208 433 161 474 161 523C161 567 182 590 219 590C256 590 277 562 277 508L277 488L379 499L379 517C379 606 336 668 262 685L262 740L172 740L172 685C99 667 57 605 57 518C57 429 121 366 185 313C239 268 285 226 285 177C285 136 259 110 217 110C175 110 149 141 149 192L149 218L47 207L47 182C47 98 96 34 172 15L172 -40L262 -40L262 15C339 33 389 97 389 182Z"},"%":{"a":621,"d":"M152 311C221 311 258 351 258 423L258 598C258 670 221 710 152 710C83 710 46 670 46 598L46 423C46 351 83 311 152 311ZM130 0L200 0L491 700L421 700ZM152 374C129 374 116 387 116 418L116 603C116 634 129 647 152 647C174 647 188 634 188 603L188 418C188 387 174 374 152 374ZM469 -10C538 -10 575 30 575 102L575 277C575 349 538 389 469 389C400 389 363 349 363 277L363 102C363 30 400 -10 469 -10ZM469 53C446 53 433 66 433 97L433 282C433 313 446 326 469 326C491 326 505 313 505 282L505 97C505 66 491 53 469 53Z"},"&":{"a":518,"d":"M487 0L392 147C417 200 437 267 455 350L349 350C341 311 334 278 326 250L259 354C345 448 368 484 368 559C368 651 308 710 219 710C125 710 64 643 64 552C64 486 94 430 120 387L135 363C76 301 42 249 42 166C42 47 111 -10 198 -10C248 -10 292 9 330 49L360 0ZM220 615C253 615 271 593 271 552C271 508 250 478 207 435C177 483 166 521 166 552C166 590 186 615 220 615ZM218 90C179 90 148 110 148 171C148 213 161 240 189 275L281 128C262 99 242 90 218 90Z"},"'":{"a":199,"d":"M67 490L132 490L153 700L45 700Z"},"(":{"a":258,"d":"M171 -34L237 -5C166 131 135 240 135 351C135 462 166 571 237 707L171 736C79 610 29 476 29 351C29 226 79 92 171 -34Z"},")":{"a":258,"d":"M87 -34C179 92 229 226 229 351C229 476 179 610 87 736L21 707C92 571 123 462 123 351C123 240 92 131 21 -5Z"},"*":{"a":456,"d":"M151 327L228 449L305 327L377 380L285 489L424 525L396 610L261 555L273 700L183 700L195 555L60 610L32 525L171 489L79 380Z"},"+":{"a":434,"d":"M397 381L256 381L256 522L178 522L178 381L37 381L37 303L178 303L178 162L256 162L256 303L397 303Z"},",":{"a":236,"d":"M65 -105L115 -105L171 10L171 105L65 105L65 0L103 0Z"},"-":{"a":300,"d":"M30 298L270 298L270 402L30 402Z"},".":{"a":236,"d":"M65 0L171 0L171 105L65 105Z"},"/":{"a":336,"d":"M9 -33L95 -33L327 733L241 733Z"},"0":{"a":434,"d":"M217 -10C319 -10 387 58 387 159L387 541C387 642 319 710 217 710C115 710 47 642 47 541L47 159C47 58 115 -10 217 -10ZM217 90C178 90 153 115 153 159L153 541C153 585 178 610 217 610C256 610 281 585 281 541L281 159C281 115 256 90 217 90Z"},"1":{"a":303,"d":"M141 0L247 0L247 700L173 700C152 662 103 629 21 623L21 549L141 549Z"},"2":{"a":399,"d":"M272 285C343 398 366 460 366 536C366 644 302 709 197 709C92 709 30 639 30 525L30 492L132 492L132 533C132 582 155 609 196 609C237 609 260 582 260 533C260 479 243 431 185 339L30 92L30 0L366 0L366 100L156 100Z"},"3":{"a":404,"d":"M284 365C333 390 359 436 359 499L359 545C359 646 298 710 195 710C92 710 31 646 31 545L31 521L133 521L133 537C133 588 155 610 193 610C231 610 253 588 253 547L253 493C253 437 229 413 173 413L138 413L138 313L180 313C236 313 260 289 260 233L260 160C260 114 236 90 195 90C154 90 130 114 130 170L130 193L28 183L28 162C28 56 91 -10 197 -10C303 -10 366 56 366 162L366 227C366 293 338 340 284 365Z"},"4":{"a":416,"d":"M394 246L337 246L337 700L211 700L24 241L24 146L231 146L231 0L337 0L337 146L394 146ZM124 246L231 521L231 246Z"},"5":{"a":415,"d":"M211 -10C315 -10 378 54 378 160L378 336C378 421 330 477 251 477C203 477 165 453 150 426L150 600L351 600L351 700L48 700L48 300L150 300L150 312C150 355 178 381 216 381C250 381 272 361 272 320L272 158C272 112 248 90 209 90C170 90 146 112 146 168L146 191L44 181L44 160C44 54 107 -10 211 -10Z"},"6":{"a":423,"d":"M217 -10C317 -10 385 58 385 158L385 294C385 381 337 437 256 437C204 437 169 413 153 387L153 547C153 585 177 610 215 610C253 610 278 585 278 547L278 519L380 519L380 542C380 642 314 710 214 710C114 710 47 642 47 542L47 158C47 58 115 -10 217 -10ZM217 90C177 90 153 115 153 153L153 271C153 315 179 341 221 341C257 341 279 321 279 278L279 153C279 115 255 90 217 90Z"},"7":{"a":367,"d":"M21 700L21 598L240 598L65 0L175 0L343 608L343 700Z"},"8":{"a":428,"d":"M312 364C357 389 383 435 383 499L383 545C383 646 322 710 214 710C106 710 45 646 45 545L45 499C45 435 71 389 116 364C66 340 38 293 38 227L38 162C38 56 101 -10 214 -10C327 -10 390 56 390 162L390 227C390 293 362 340 312 364ZM151 547C151 588 173 610 214 610C255 610 277 588 277 547L277 493C277 437 253 413 214 413C175 413 151 437 151 493ZM284 160C284 114 260 90 214 90C168 90 144 114 144 160L144 233C144 289 168 313 214 313C260 313 284 289 284 233Z"},"9":{"a":423,"d":"M196 710C96 710 28 642 28 542L28 406C28 319 76 263 157 263C209 263 244 287 260 313L260 153C260 115 236 90 198 90C160 90 135 115 135 153L135 181L33 181L33 158C33 58 99 -10 199 -10C299 -10 366 58 366 158L366 542C366 642 298 710 196 710ZM196 610C236 610 260 585 260 547L260 429C260 385 234 359 192 359C156 359 134 379 134 422L134 547C134 585 158 610 196 610Z"},":":{"a":236,"d":"M65 377L171 377L171 482L65 482ZM65 0L171 0L171 105L65 105Z"},";":{"a":236,"d":"M65 377L171 377L171 482L65 482ZM65 -105L115 -105L171 10L171 105L65 105L65 0L103 0Z"},"<":{"a":424,"d":"M42 381L42 305L392 155L392 245L151 343L392 442L392 533Z"},"=":{"a":434,"d":"M42 467L42 389L392 389L392 467ZM42 294L42 216L392 216L392 294Z"},">":{"a":434,"d":"M392 381L42 533L42 442L283 343L42 245L42 155L392 305Z"},"?":{"a":402,"d":"M132 180L222 180L222 196C222 264 255 305 289 346C328 393 368 444 368 537C368 645 304 710 199 710C94 710 32 640 32 526L32 492L134 492L134 534C134 583 157 610 198 610C239 610 262 583 262 534C262 465 234 427 203 388C169 345 132 297 132 196ZM124 0L230 0L230 106L124 106Z"},"@":{"a":731,"d":"M394 -60C456 -60 512 -48 568 -13L576 83C515 38 459 24 396 24C233 24 138 111 138 275C138 495 204 655 392 655C526 655 606 578 606 448C606 352 584 219 532 219C514 219 507 229 507 245C507 248 507 249 508 257L538 527L441 527L437 487C420 518 390 537 346 537C285 537 241 497 232 405L219 273C218 263 217 253 217 244C217 174 248 129 320 129C363 129 399 154 420 196C428 155 456 129 511 129C647 129 689 303 689 446C689 636 580 740 389 740C157 740 44 553 44 285C44 63 174 -60 394 -60ZM357 214C326 214 314 233 314 262C314 266 314 271 315 276L327 393C330 426 343 453 375 453C409 453 426 427 426 386L426 379L417 291C411 235 386 214 357 214Z"},"A":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257Z"},"B":{"a":439,"d":"M321 362C367 388 392 433 392 496L392 533C392 634 327 700 226 700L58 700L58 0L235 0C336 0 401 66 401 167L401 224C401 291 372 338 321 362ZM221 600C262 600 286 576 286 535L286 485C286 434 262 410 211 410L164 410L164 600ZM295 165C295 124 271 100 230 100L164 100L164 310L220 310C271 310 295 286 295 235Z"},"C":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10Z"},"D":{"a":438,"d":"M58 0L224 0C325 0 390 66 390 167L390 533C390 634 325 700 224 700L58 700ZM164 100L164 600L219 600C260 600 284 576 284 535L284 165C284 124 260 100 219 100Z"},"E":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700Z"},"F":{"a":378,"d":"M58 0L164 0L164 295L314 295L314 395L164 395L164 600L354 600L354 700L58 700Z"},"G":{"a":434,"d":"M389 482L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C321 -10 389 58 389 159L389 383L219 383L219 283L283 283L283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 482Z"},"H":{"a":454,"d":"M164 0L164 305L290 305L290 0L396 0L396 700L290 700L290 405L164 405L164 700L58 700L58 0Z"},"I":{"a":222,"d":"M58 0L164 0L164 700L58 700Z"},"J":{"a":309,"d":"M90 -10C190 -10 255 56 255 156L255 700L149 700L149 175C149 114 127 90 77 90C63 90 47 92 36 95L22 0C41 -6 63 -10 90 -10Z"},"K":{"a":450,"d":"M315 0L429 0L269 403L418 700L304 700L164 416L164 700L58 700L58 0L164 0L164 211L204 288Z"},"L":{"a":377,"d":"M58 0L353 0L353 100L164 100L164 700L58 700Z"},"M":{"a":598,"d":"M388 700L300 253L208 700L58 700L58 0L162 0L162 480L261 0L335 0L434 480L434 0L540 0L540 700Z"},"N":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700Z"},"O":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90Z"},"P":{"a":421,"d":"M58 0L164 0L164 284L224 284C325 284 390 350 390 451L390 533C390 634 325 700 224 700L58 700ZM164 384L164 600L219 600C260 600 284 576 284 535L284 449C284 408 260 384 219 384Z"},"Q":{"a":446,"d":"M369 72C382 97 389 126 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C252 -10 281 -3 305 10C325 -26 359 -40 408 -40L408 62C390 62 378 65 369 72ZM283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541Z"},"R":{"a":435,"d":"M406 0L317 313C363 341 390 391 390 456L390 533C390 634 325 700 224 700L58 700L58 0L164 0L164 289L219 289L296 0ZM164 600L219 600C260 600 284 576 284 535L284 454C284 413 260 389 219 389L164 389Z"},"S":{"a":408,"d":"M205 -10C306 -10 376 62 376 162C376 239 343 290 241 392C166 467 144 499 144 543C144 587 165 610 202 610C239 610 260 582 260 528L260 508L362 519L362 537C362 642 302 710 201 710C100 710 40 642 40 538C40 461 70 407 175 308C254 233 272 201 272 157C272 116 246 90 204 90C162 90 136 121 136 172L136 198L34 187L34 162C34 62 104 -10 205 -10Z"},"T":{"a":386,"d":"M24 600L140 600L140 0L246 0L246 600L362 600L362 700L24 700Z"},"U":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10Z"},"V":{"a":422,"d":"M292 700L212 150L132 700L24 700L140 0L282 0L398 700Z"},"W":{"a":602,"d":"M472 700L414 227L356 700L248 700L190 227L132 700L25 700L128 0L245 0L301 461L357 0L474 0L577 700Z"},"X":{"a":443,"d":"M421 0L284 357L416 700L306 700L228 476L145 700L31 700L161 362L22 0L132 0L217 244L307 0Z"},"Y":{"a":430,"d":"M299 700L215 433L133 700L20 700L162 293L162 0L268 0L268 293L410 700Z"},"Z":{"a":382,"d":"M350 700L32 700L32 600L232 600L32 90L32 0L350 0L350 100L150 100L350 610Z"},"[":{"a":259,"d":"M56 -22L234 -22L234 59L152 59L152 640L234 640L234 722L56 722Z"},"\\":{"a":336,"d":"M241 -33L327 -33L95 733L9 733Z"},"]":{"a":258,"d":"M25 -22L202 -22L202 722L25 722L25 640L107 640L107 59L25 59Z"},"^":{"a":434,"d":"M180 700L28 350L119 350L218 591L316 350L406 350L256 700Z"},"_":{"a":400,"d":"M0 -117L400 -117L400 -40L0 -40Z"},"`":{"a":190,"d":"M104 539L170 539L113 700L15 700Z"},"a":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257Z"},"b":{"a":439,"d":"M321 362C367 388 392 433 392 496L392 533C392 634 327 700 226 700L58 700L58 0L235 0C336 0 401 66 401 167L401 224C401 291 372 338 321 362ZM221 600C262 600 286 576 286 535L286 485C286 434 262 410 211 410L164 410L164 600ZM295 165C295 124 271 100 230 100L164 100L164 310L220 310C271 310 295 286 295 235Z"},"c":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10Z"},"d":{"a":438,"d":"M58 0L224 0C325 0 390 66 390 167L390 533C390 634 325 700 224 700L58 700ZM164 100L164 600L219 600C260 600 284 576 284 535L284 165C284 124 260 100 219 100Z"},"e":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700Z"},"f":{"a":378,"d":"M58 0L164 0L164 295L314 295L314 395L164 395L164 600L354 600L354 700L58 700Z"},"g":{"a":434,"d":"M389 482L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C321 -10 389 58 389 159L389 383L219 383L219 283L283 283L283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 482Z"},"h":{"a":454,"d":"M164 0L164 305L290 305L290 0L396 0L396 700L290 700L290 405L164 405L164 700L58 700L58 0Z"},"i":{"a":222,"d":"M58 0L164 0L164 700L58 700Z"},"j":{"a":309,"d":"M90 -10C190 -10 255 56 255 156L255 700L149 700L149 175C149 114 127 90 77 90C63 90 47 92 36 95L22 0C41 -6 63 -10 90 -10Z"},"k":{"a":450,"d":"M315 0L429 0L269 403L418 700L304 700L164 416L164 700L58 700L58 0L164 0L164 211L204 288Z"},"l":{"a":377,"d":"M58 0L353 0L353 100L164 100L164 700L58 700Z"},"m":{"a":598,"d":"M388 700L300 253L208 700L58 700L58 0L162 0L162 480L261 0L335 0L434 480L434 0L540 0L540 700Z"},"n":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700Z"},"o":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90Z"},"p":{"a":421,"d":"M58 0L164 0L164 284L224 284C325 284 390 350 390 451L390 533C390 634 325 700 224 700L58 700ZM164 384L164 600L219 600C260 600 284 576 284 535L284 449C284 408 260 384 219 384Z"},"q":{"a":446,"d":"M369 72C382 97 389 126 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10C252 -10 281 -3 305 10C325 -26 359 -40 408 -40L408 62C390 62 378 65 369 72ZM283 159C283 115 258 90 219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541Z"},"r":{"a":435,"d":"M406 0L317 313C363 341 390 391 390 456L390 533C390 634 325 700 224 700L58 700L58 0L164 0L164 289L219 289L296 0ZM164 600L219 600C260 600 284 576 284 535L284 454C284 413 260 389 219 389L164 389Z"},"s":{"a":408,"d":"M205 -10C306 -10 376 62 376 162C376 239 343 290 241 392C166 467 144 499 144 543C144 587 165 610 202 610C239 610 260 582 260 528L260 508L362 519L362 537C362 642 302 710 201 710C100 710 40 642 40 538C40 461 70 407 175 308C254 233 272 201 272 157C272 116 246 90 204 90C162 90 136 121 136 172L136 198L34 187L34 162C34 62 104 -10 205 -10Z"},"t":{"a":386,"d":"M24 600L140 600L140 0L246 0L246 600L362 600L362 700L24 700Z"},"u":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10Z"},"v":{"a":422,"d":"M292 700L212 150L132 700L24 700L140 0L282 0L398 700Z"},"w":{"a":602,"d":"M472 700L414 227L356 700L248 700L190 227L132 700L25 700L128 0L245 0L301 461L357 0L474 0L577 700Z"},"x":{"a":443,"d":"M421 0L284 357L416 700L306 700L228 476L145 700L31 700L161 362L22 0L132 0L217 244L307 0Z"},"y":{"a":430,"d":"M299 700L215 433L133 700L20 700L162 293L162 0L268 0L268 293L410 700Z"},"z":{"a":382,"d":"M350 700L32 700L32 600L232 600L32 90L32 0L350 0L350 100L150 100L350 610Z"},"{":{"a":273,"d":"M248 -30L248 52C184 52 173 62 173 120L173 246C173 303 155 341 110 350C155 359 173 397 173 454L173 580C173 638 184 648 248 648L248 730C131 730 77 699 77 592L77 439C77 403 63 391 21 391L21 309C63 309 77 297 77 261L77 108C77 1 131 -30 248 -30Z"},"|":{"a":400,"d":"M152 -150L248 -150L248 850L152 850Z"},"}":{"a":273,"d":"M25 -30C142 -30 196 1 196 108L196 261C196 297 210 309 252 309L252 391C210 391 196 403 196 439L196 592C196 699 142 730 25 730L25 648C89 648 100 638 100 580L100 454C100 397 118 359 163 350C118 341 100 303 100 246L100 120C100 62 89 52 25 52Z"},"~":{"a":434,"d":"M86 268C113 308 126 328 151 328C168 328 182 318 210 300C246 277 262 271 284 271C336 271 367 306 405 371L348 414C321 374 308 354 283 354C266 354 253 364 224 382C188 404 172 411 150 411C98 411 67 376 29 311Z"},"Á":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM201.2 760L145.1 760L193.6 896.9L276.9 896.9Z"},"É":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM198.7 760L142.6 760L191.1 896.9L274.4 896.9Z"},"Í":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM101.2 760L45.1 760L93.6 896.9L176.9 896.9Z"},"Ó":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM209.2 760L153.1 760L201.6 896.9L284.9 896.9Z"},"Ú":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM208.2 760L152.1 760L200.6 896.9L283.9 896.9Z"},"À":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM220.8 760L276.9 760L228.4 896.9L145.1 896.9Z"},"È":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM218.3 760L274.4 760L225.9 896.9L142.6 896.9Z"},"Ì":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM120.8 760L176.9 760L128.4 896.9L45.1 896.9Z"},"Ò":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM228.8 760L284.9 760L236.4 896.9L153.1 896.9Z"},"Ù":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM227.8 760L283.9 760L235.4 896.9L152.1 896.9Z"},"Â":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM188.1 900L93.8 760L150.2 760L211.6 856.4L272.4 760L328.2 760L235.2 900Z"},"Ê":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM185.6 900L91.3 760L147.7 760L209.1 856.4L269.9 760L325.7 760L232.7 900Z"},"Î":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM88.1 900L-6.2 760L50.2 760L111.6 856.4L172.4 760L228.2 760L135.2 900Z"},"Ô":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM196.1 900L101.8 760L158.2 760L219.6 856.4L280.4 760L336.2 760L243.2 900Z"},"Û":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM195.1 900L100.8 760L157.2 760L218.6 856.4L279.4 760L335.2 760L242.2 900Z"},"Ñ":{"a":472,"d":"M58 0L162 0L162 448L302 0L414 0L414 700L310 700L310 230L175 700L58 700ZM141.7 760C161.1 790 170.5 805 188.5 805C200.7 805 210.8 797.5 231 784C256.9 766.8 268.4 762.2 284.2 762.2C321.7 762.2 344 788.5 371.4 837.2L330.3 869.5C310.9 839.5 301.5 824.5 283.5 824.5C271.3 824.5 261.9 832 241 845.5C215.1 862 203.6 867.2 187.8 867.2C150.3 867.2 128 841 100.6 792.2Z"},"Ä":{"a":422,"d":"M290 0L398 0L282 700L140 700L24 0L130 0L153 155L267 155ZM167 257L210 550L253 257ZM73.6 760L158.4 760L158.4 844L73.6 844ZM263.6 760L348.4 760L348.4 844L263.6 844Z"},"Ë":{"a":390,"d":"M58 0L359 0L359 100L164 100L164 305L319 305L319 405L164 405L164 600L359 600L359 700L58 700ZM71.1 760L155.9 760L155.9 844L71.1 844ZM261.1 760L345.9 760L345.9 844L261.1 844Z"},"Ï":{"a":222,"d":"M58 0L164 0L164 700L58 700ZM-6.4 760L78.4 760L78.4 844L-6.4 844ZM143.6 760L228.4 760L228.4 844L143.6 844Z"},"Ö":{"a":438,"d":"M219 -10C321 -10 389 58 389 159L389 541C389 642 321 710 219 710C117 710 49 642 49 541L49 159C49 58 117 -10 219 -10ZM219 90C180 90 155 115 155 159L155 541C155 585 180 610 219 610C258 610 283 585 283 541L283 159C283 115 258 90 219 90ZM81.6 760L166.4 760L166.4 844L81.6 844ZM271.6 760L356.4 760L356.4 844L271.6 844Z"},"Ü":{"a":436,"d":"M219 -10C316 -10 382 56 382 154L382 700L278 700L278 154C278 113 253 90 219 90C185 90 160 113 160 154L160 700L54 700L54 154C54 56 122 -10 219 -10ZM80.6 760L165.4 760L165.4 844L80.6 844ZM270.6 760L355.4 760L355.4 844L270.6 844Z"},"Ç":{"a":420,"d":"M215 -10C314 -10 381 58 381 156L381 256L277 256L277 156C277 115 252 90 216 90C180 90 155 115 155 156L155 544C155 585 180 610 216 610C252 610 277 585 277 544L277 462L381 462L381 544C381 642 314 710 215 710C116 710 49 642 49 544L49 156C49 58 116 -10 215 -10ZM172.6 -188L212.6 -188L257.4 -96L257.4 -20L172.6 -20L172.6 -104L203 -104Z"}}}</script>
+<!-- SKU precargados (solo SKU y marca, tal como los entregó Francisco el 18-11-2026) -->
+<script id="precargados" type="application/json">{"nombre":"Estuchería Navidad","fecha":"2026-11-18","skus":[["80745167","REVLON"],["80578694","B.FRESH"],["80883141","B.FRESH"],["80883139","B.FRESH"],["80883140","B.FRESH"],["80874861","OLPALEX"],["80874863","OLPALEX"],["80874862","OLPALEX"],["80874857","OLPALEX"],["80854607","URBAN DECAY"],["80874865","K18"],["80874864","K18"],["80874859","MOROCCANOIL"],["80874858","MOROCCANOIL"],["80874860","MOROCCANOIL"],["80881378","SKINCARE"],["80881373","SKINCARE"],["80881374","SKINCARE"],["80881379","SKINCARE"],["80881375","SKINCARE"],["80881376","SKINCARE"],["80881377","SKINCARE"],["80881380","SKINCARE"],["80881381","SKINCARE"],["80710174","SKINCARE"],["80874868","LOLA"],["80874869","LOLA"],["80874870","LOLA"],["80874871","LOLA"],["80874058","LOLA"],["80864488","LOLA"],["80877684","BELIF"],["80877692","BELIF"],["80877685","GAON"],["80877689","GAON"],["884021615","THE ORDINARY"],["884021617","THE ORDINARY"],["884021619","THE ORDINARY"],["80877687","AMPLEN"],["80877686","AMPLEN"],["80877688","AMPLEN"],["80877690","AMPLEN"],["80877691","AMPLEN"],["80849328","THE BODY SHOP"],["80863264","THE BODY SHOP"],["80850830","THE BODY SHOP"],["80745971","THE BODY SHOP"],["80863203","THE BODY SHOP"],["80863249","THE BODY SHOP"],["80849028","MAYBELLINE"],["80730642","MAYBELLINE"],["80730643","MAYBELLINE"],["80849018","MAYBELLINE"],["80849034","MAYBELLINE"],["50387790","MAYBELLINE"],["80849040","MAYBELLINE"],["80849014","MAYBELLINE"],["80857955","MAC COSMETICS"],["80841523","MAC COSMETICS"],["80857960","MAC COSMETICS"],["80841552","MAC COSMETICS"],["80857959","MAC COSMETICS"],["80841512","MAC COSMETICS"],["80841536","MAC COSMETICS"],["80841522","MAC COSMETICS"],["80841531","MAC COSMETICS"],["80857954","MAC COSMETICS"],["80841514","MAC COSMETICS"],["80857962","MAC COSMETICS"],["80854588","LANCOME"],["80711405","LANCOME"],["80646775","LANCOME"],["80808833","LANCOME"],["80849029","L´ORÉAL PARIS"],["80849030","L´ORÉAL PARIS"],["80849033","L´ORÉAL PARIS"],["80834213","KIEHLS"],["80854608","KIEHLS"],["80834212","KIEHLS"],["80834211","KIEHLS"],["80814734","KERASTASE"],["80855787","KERASTASE"],["15535793","GARNIER SKIN NATURAL FACE"],["50300467","GARNIER SKIN NATURAL FACE"],["80128936","GARNIER SKIN NATURAL FACE"],["80860573","FENTY"],["80860583","FENTY"],["80860598","FENTY"],["80860589","FENTY"],["80860597","FENTY"],["80787131","ESTÉE LAUDER"],["80825277","ESTÉE LAUDER"],["80825265","ESTÉE LAUDER"],["50300471","DERMO EXPERTISE"],["8493553","DERMO EXPERTISE"],["80144280","DERMO EXPERTISE"],["80036242","DERMO EXPERTISE"],["14540710","DERMO EXPERTISE"],["80128937","DERMO EXPERTISE"],["14540714","DERMO EXPERTISE"],["80799574","CLINIQUE"],["80799570","CLINIQUE"],["80799569","CLINIQUE"],["80799572","CLINIQUE"],["80799568","CLINIQUE"],["80838272","CLINIQUE"],["80838269","CLINIQUE"],["80130437","BIOTHERM"],["80854605","BIOTHERM"],["80854603","BIOTHERM"],["80854604","BIOTHERM"],["80854599","BIOTHERM"],["80854602","BIOTHERM"],["80854600","BIOTHERM"],["15394470","BIOTHERM"],["80854598","BIOTHERM"],["80854601","BIOTHERM"],["80823070","PETRIZZIO"],["80823056","PETRIZZIO"],["80823083","PETRIZZIO"],["80823061","PETRIZZIO"],["80823039","PETRIZZIO"],["80823063","PETRIZZIO"],["50293596","PETRIZZIO"],["80015889","PETRIZZIO"],["80823037","PETRIZZIO"],["80823038","PETRIZZIO"],["80823079","PETRIZZIO"],["80823088","PETRIZZIO"],["80823082","PETRIZZIO"],["80823089","PETRIZZIO"],["80823054","PETRIZZIO"],["80823075","PETRIZZIO"],["80823072","PETRIZZIO"],["80823058","PETRIZZIO"],["80823052","PETRIZZIO"],["80823044","PETRIZZIO"],["80823045","PETRIZZIO"],["80823071","PETRIZZIO"],["80823080","PETRIZZIO"],["80823065","PETRIZZIO"],["80823069","PETRIZZIO"],["80823084","PETRIZZIO"],["80823036","PETRIZZIO"],["80823077","PETRIZZIO"],["80823068","PETRIZZIO"],["80823048","PETRIZZIO"],["80823092","PETRIZZIO"],["80823049","PETRIZZIO"],["80823078","PETRIZZIO"],["80823035","PETRIZZIO"],["80823042","PETRIZZIO"],["80823062","PETRIZZIO"],["80015908","PETRIZZIO"],["80823050","PETRIZZIO"],["80823046","PETRIZZIO"],["80823057","PETRIZZIO"],["80823055","PETRIZZIO"],["80707212","PETRIZZIO"],["80823051","PETRIZZIO"],["80823034","PETRIZZIO"],["80823085","PETRIZZIO"],["80579521","PETRIZZIO"],["80823053","PETRIZZIO"],["80823074","PETRIZZIO"],["80823076","PETRIZZIO"],["80823091","PETRIZZIO"],["80579540","ITZY RITZY"],["80016026","ITZY RITZY"],["80579539","ITZY RITZY"]]}</script>
 
 <script id="core">
 /* Núcleo sin dependencias del navegador: inventario, búsqueda, diseño de la etiqueta y PDF. */
@@ -652,6 +659,17 @@ const ETQ = (() => {
     return out;
   }
 
+  /** Junta el inventario con los SKU precargados (que solo traen SKU y marca).
+      Si un SKU está en el inventario, manda el inventario (trae nombre y precio); si no, se agrega con lo que haya. */
+  function combinar(productos, pre) {
+    const lista = (productos || []).slice(), ya = new Set(lista.map(p => p.sku));
+    for (const [sku, marca] of ((pre && pre.skus) || [])) {
+      if (ya.has(sku)) continue;
+      lista.push({ sku, desc: '', marca, precio: null, stock: null, upcs: [], soloPrecarga: true });
+      ya.add(sku);
+    }
+    return lista;
+  }
   /** Un código suelto (SKU o código de barras) exacto, o null. */
   function porCodigo(inv, cod) {
     cod = String(cod ?? '').trim();
@@ -672,7 +690,7 @@ const ETQ = (() => {
   }
 
   return { SPEC, init, normalizar, partirNombre, formatoPrecio, componer, svgEtiqueta, anchoTexto,
-           textoDeArchivo, _gunzip: gunzip, parsearInventario, localesDelInventario, indexar, buscar, porCodigo, leerPrecio, lineaMasiva, crearPDF, sinTildes };
+           textoDeArchivo, _gunzip: gunzip, parsearInventario, localesDelInventario, indexar, combinar, buscar, porCodigo, leerPrecio, lineaMasiva, crearPDF, sinTildes };
 })();
 if (typeof module !== 'undefined') module.exports = ETQ;
 </script>
@@ -682,6 +700,12 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   'use strict';
   const $ = s => document.querySelector(s);
   ETQ.init(JSON.parse(document.getElementById('bebas').textContent));
+  // SKU precargados en la página (solo SKU y marca); se combinan con el inventario cuando se carga
+  const PRE = (() => {
+    try { const d = JSON.parse(document.getElementById('precargados').textContent); return d && Array.isArray(d.skus) ? d : { skus: [] }; }
+    catch (e) { return { nombre: '', skus: [] }; }
+  })();
+  const indicePre = () => (PRE.skus.length ? ETQ.indexar(ETQ.combinar([], PRE)) : null);
 
   // ---------- guardado local (si el navegador lo permite) ----------
   const LS = {
@@ -790,10 +814,29 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const m = /(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/.exec(nombre || '');
     return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
   }
+  function pintarPrecarga() {
+    const caja = $('#caja-precarga');
+    caja.hidden = !(inv && PRE.skus.length);
+    if (caja.hidden) return;
+    const sinDatos = PRE.skus.filter(([s]) => { const p = inv.porSku.get(s); return p && p.soloPrecarga; }).length;
+    $('#precarga-nombre').textContent = PRE.nombre || 'SKU precargados';
+    $('#precarga-txt').textContent = `${miles(PRE.skus.length)} SKU precargados` +
+      (sinDatos ? ` (${miles(sinDatos)} sin nombre ni precio: se completan a mano o al cargar un inventario que los traiga)` : ' (todos con nombre y precio del inventario)');
+  }
+  function activarBusqueda(si) {
+    const b = $('#buscar');
+    b.disabled = !si; $('#btn-masivo').disabled = !si;
+    b.placeholder = si ? 'SKU, código de barras o nombre…' : 'Primero carga el inventario (paso 1)';
+  }
   function pintarInventario() {
     const e = $('#estado-inv');
-    $('#btn-quitar-inv').hidden = !inv;
-    if (!inv) { e.className = 'estado-inv suave'; e.textContent = 'Sin inventario cargado.'; pintarPasos(); return; }
+    $('#btn-quitar-inv').hidden = !infoInv;
+    pintarPrecarga();
+    if (!infoInv) {
+      e.className = 'estado-inv suave';
+      e.textContent = 'Sin inventario cargado.' + (inv ? ' Puedes buscar los SKU precargados; para nombres y precios de todo lo demás, carga el inventario.' : '');
+      activarBusqueda(!!inv); pintarPasos(); return;
+    }
     const f = infoInv.fecha ? new Date(infoInv.fecha) : null;
     const dias = f ? Math.floor((Date.now() - f.getTime()) / 86400000) : null;
     const fechaTxt = f ? f.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'sin fecha en el nombre';
@@ -805,10 +848,10 @@ if (typeof module !== 'undefined') module.exports = ETQ;
         : '<span class="suave">— para cambiarla, vuelve a cargar el archivo y usa «Cambiar tienda»</span>');
     }
     e.className = 'estado-inv';
-    e.innerHTML = `<span class="ok">✔</span> <b>${miles(inv.lista.length)}</b> SKU${tienda} · archivo <b>${esc(infoInv.nombre)}</b> · inventario del ${esc(fechaTxt)}` +
+    const nInv = inv.lista.filter(p => !p.soloPrecarga).length;
+    e.innerHTML = `<span class="ok">✔</span> <b>${miles(nInv)}</b> SKU${tienda} · archivo <b>${esc(infoInv.nombre)}</b> · inventario del ${esc(fechaTxt)}` +
       (dias !== null && dias >= 3 ? ` <span class="aviso">Tiene ${dias} días: revisa que sea el más reciente para que los precios estén al día.</span>` : '');
-    $('#buscar').disabled = false; $('#buscar').placeholder = 'SKU, código de barras o nombre…';
-    $('#btn-masivo').disabled = false;
+    activarBusqueda(true);
     pintarPasos(); pintarTelefono();
   }
   /** Muestra un botón por tienda y espera la elección. */
@@ -843,7 +886,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     ultimoTexto = texto;
     const f = fechaDeNombre(nombre);
     infoInv = { nombre, fecha: f ? f.getTime() : null, cargado: Date.now(), local, nLocales: locales.length };
-    inv = ETQ.indexar(productos);
+    inv = ETQ.indexar(ETQ.combinar(productos, PRE));
     // los precios no editados a mano se actualizan con el inventario nuevo
     for (const it of lista) {
       const p = inv.porSku.get(it.sku);
@@ -879,11 +922,11 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   $('#archivo').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) cargarArchivo(f); ev.target.value = ''; });
   $('#btn-quitar-inv').addEventListener('click', async () => {
     if (!confirm('¿Quitar el inventario guardado en este navegador?\nTu lista y los nombres corregidos se mantienen. Después cargas el archivo de nuevo.')) return;
-    inv = null; infoInv = null; ultimoTexto = null;
+    infoInv = null; ultimoTexto = null;
+    inv = indicePre();                                   // quedan solo los SKU precargados
     try { await DB.borrar('inventario'); } catch (e) { /* sin caché */ }
-    const b = $('#buscar');
-    b.value = ''; b.disabled = true; b.placeholder = 'Primero carga el inventario (paso 1)';
-    $('#btn-masivo').disabled = true; $('#resultados').innerHTML = ''; $('#msg-buscar').innerHTML = '';
+    $('#buscar').value = ''; $('#resultados').innerHTML = ''; $('#msg-buscar').innerHTML = '';
+    for (const it of lista) it.encontrado = !!(inv && inv.porSku.has(it.sku));
     $('#elegir-local').hidden = true;
     invalidarPdf(); pintarInventario(); pintarLista();
   });
@@ -959,7 +1002,8 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const ya = lista.find(it => it.sku === p.sku);
     if (ya) ya.cant = Math.min(999, (ya.cant || 0) + cant);
     else {
-      const g = nombres[p.sku], auto = ETQ.partirNombre(p.desc);
+      // sin nombre en los datos (SKU precargado): se parte con la marca en la línea 1
+      const g = nombres[p.sku], auto = p.desc ? ETQ.partirNombre(p.desc) : { l1: ETQ.normalizar(p.marca || ''), l2: '' };
       lista.push({ id: sec++, sku: p.sku, desc: p.desc, l1: g ? g[0] : auto.l1, l2: g ? g[1] : auto.l2,
                    precio: p.precio, precioManual: false, cant, encontrado: true });
     }
@@ -973,11 +1017,18 @@ if (typeof module !== 'undefined') module.exports = ETQ;
       Devuelve el producto del inventario (con su precio) o null. */
   function precioDistinto(it) {
     const p = inv ? inv.porSku.get(it.sku) : null;
-    return p && infoInv && it.precioManual && it.precio !== p.precio && it.precioRevisadoEn !== infoInv.cargado ? p : null;
+    return p && !p.soloPrecarga && p.precio !== null && infoInv && it.precioManual && it.precio !== p.precio &&
+           it.precioRevisadoEn !== infoInv.cargado ? p : null;
+  }
+  /** SKU precargado sin datos del inventario: falta completar nombre o precio a mano. */
+  function faltaCompletar(it) {
+    const p = inv ? inv.porSku.get(it.sku) : null;
+    return !!(p && p.soloPrecarga && (!nombres[it.sku] || it.precio === null || it.precio === undefined || it.precio === ''));
   }
   function avisosItem(it) {
     const a = [];
     if (inv && !it.encontrado) a.push(['error', 'Este SKU no está en el inventario cargado']);
+    if (faltaCompletar(it)) a.push(['aviso', 'Este SKU no está en el inventario: escribe el nombre del producto (línea 1 y 2) y el precio']);
     const pi = precioDistinto(it);
     if (pi) {
       const mio = ETQ.formatoPrecio(it.precio) || 'vacío', delInv = ETQ.formatoPrecio(pi.precio);
@@ -1017,13 +1068,13 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   // ---------- guía de pasos: se marca sola según el avance ----------
   const TXT_PASO3 = 'Nombre, cantidad y precio';
   function porRevisar(it) {
-    return (inv && !it.encontrado) || (!nombres[it.sku] && (it.desc || '').length >= 28) ||
+    return (inv && !it.encontrado) || faltaCompletar(it) || (!nombres[it.sku] && (it.desc || '').length >= 28) ||
            it.precio === null || it.precio === undefined || it.precio === '' || !!precioDistinto(it);
   }
   function pintarPasos() {
     const activos = lista.filter(it => it.cant > 0);
     const pend = activos.filter(porRevisar).length;
-    const hecho = [!!inv, activos.length > 0, activos.length > 0 && pend === 0, !!urlPdf];
+    const hecho = [!!infoInv, activos.length > 0, activos.length > 0 && pend === 0, !!urlPdf];
     const actual = hecho.indexOf(false);
     document.querySelectorAll('.paso').forEach((el, i) => {
       el.classList.toggle('hecho', hecho[i]);
@@ -1087,7 +1138,8 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     else if (b.dataset.a === 'mantener') it.precioRevisadoEn = infoInv ? infoInv.cargado : null;
     else if (b.dataset.a === 'restaurar') {
       guardarNombre(it.sku, null);
-      const p = inv?.porSku.get(it.sku), a = ETQ.partirNombre(p ? p.desc : it.desc);
+      const p = inv?.porSku.get(it.sku);
+      const a = p && !p.desc ? { l1: ETQ.normalizar(p.marca || ''), l2: '' } : ETQ.partirNombre(p ? p.desc : it.desc);
       it.l1 = a.l1; it.l2 = a.l2;
       if (p) { it.precio = p.precio; it.precioManual = false; }
     }
@@ -1156,11 +1208,22 @@ if (typeof module !== 'undefined') module.exports = ETQ;
   }
   $('#imp-nombres').addEventListener('change', ev => { const f = ev.target.files[0]; if (f) importarNombres(f); ev.target.value = ''; });
 
+  // ---------- SKU precargados ----------
+  $('#btn-precarga').addEventListener('click', () => {
+    if (!inv || !PRE.skus.length) return;
+    if (!confirm(`¿Agregar los ${PRE.skus.length} SKU de «${PRE.nombre}» a la lista?\nLos que ya estén en la lista suman 1 a su cantidad.`)) return;
+    let n = 0;
+    for (const [sku] of PRE.skus) { const p = inv.porSku.get(sku); if (p) { agregar(p, 1, false); n++; } }
+    pintarLista();
+    $('#msg-buscar').innerHTML = `<div class="ok" style="margin-top:8px">${n} SKU de «${esc(PRE.nombre)}» agregados a la lista.</div>`;
+  });
+
   // ---------- inicio ----------
-  pintarNombres(); pintarLista();
+  inv = indicePre();
+  pintarNombres(); pintarInventario(); pintarLista();
   DB.get('inventario').then(d => {
-    if (!d || inv) return;
-    infoInv = d.info; inv = ETQ.indexar(d.productos);
+    if (!d || infoInv) return;
+    infoInv = d.info; inv = ETQ.indexar(ETQ.combinar(d.productos, PRE));
     for (const it of lista) it.encontrado = inv.porSku.has(it.sku);
     pintarInventario(); pintarLista();
   }).catch(() => {});
