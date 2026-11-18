@@ -38,6 +38,10 @@
   button, .boton { font: inherit; border: 1px solid var(--borde); background: var(--panel); color: var(--texto); border-radius: 7px; padding: 7px 14px; cursor: pointer; text-decoration: none; display: inline-block; }
   button:hover, .boton:hover { border-color: var(--acento); }
   button.primario, .boton.primario { background: var(--acento); border-color: var(--acento); color: var(--acento-txt); font-weight: 600; }
+  button.rojo { background: #c62828; border-color: #c62828; color: #fff; font-weight: 600; }
+  button.verde { background: #1e7a3c; border-color: #1e7a3c; color: #fff; font-weight: 600; }
+  button.rojo:hover { background: #b71c1c; border-color: #b71c1c; }
+  button.verde:hover { background: #18692f; border-color: #18692f; }
   button:disabled { opacity: .5; cursor: default; }
   button.chico { padding: 3px 9px; font-size: 13px; }
   input[type=text], input[type=number], input[type=search], textarea { font: inherit; border: 1px solid var(--borde); border-radius: 7px; padding: 7px 10px; background: #fff; color: var(--texto); }
@@ -81,6 +85,8 @@
   .vacio { color: var(--suave); padding: 18px; text-align: center; border: 1px dashed var(--borde); border-radius: 9px; }
   .totales { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--borde); }
   .totales .grande { font-size: 18px; font-weight: 600; }
+  .totales .cuenta { flex: 1; text-align: center; }        /* «Vaciar» a la izquierda, cuenta al centro, «Generar PDF» a la derecha */
+  .totales .acciones-pdf { justify-content: flex-end; }
   .nota { font-size: 13px; color: var(--suave); margin-top: 8px; }
   #zona-drop { position: fixed; inset: 0; background: rgba(31,95,191,.12); border: 3px dashed var(--acento); display: none; place-items: center; font-size: 22px; color: var(--acento); z-index: 10; }
   #zona-drop.activa { display: grid; }
@@ -95,7 +101,8 @@
     main { padding: 12px 10px 48px; gap: 12px; }
     section { padding: 14px 12px; }
     .prev { width: 100%; max-width: 300px; height: auto; aspect-ratio: 3 / 2; }
-    .totales .fila { width: 100%; }
+    .totales .cuenta { order: -1; flex-basis: 100%; text-align: left; }   /* en el celular la cuenta va arriba; los botones abajo, uno a cada lado */
+    .totales .acciones-pdf { margin-left: auto; }
     /* resultados de búsqueda como tarjetas */
     #resultados { max-height: none; overflow: visible; border: none; }
     #resultados table, #resultados tbody, #resultados tr, #resultados td { display: block; }
@@ -174,10 +181,10 @@
     <h2><span class="circ">3</span> Revisar la lista</h2>
     <div id="items"></div>
     <div class="totales">
-      <div><span id="total" class="grande">0 etiquetas</span> <span id="hojas" class="suave"></span></div>
-      <div class="fila">
-        <button id="btn-vaciar">Vaciar lista</button>
-        <span class="paso-imprimir"><span class="circ">4</span><button id="btn-pdf" class="primario" disabled>Generar PDF</button></span>
+      <button id="btn-vaciar" class="rojo">Vaciar lista</button>
+      <div class="cuenta"><span id="total" class="grande">0 etiquetas</span> <span id="hojas" class="suave"></span></div>
+      <div class="fila acciones-pdf">
+        <span class="paso-imprimir"><span class="circ">4</span><button id="btn-pdf" class="verde" disabled>Generar PDF</button></span>
         <a id="lnk-pdf" class="boton" hidden target="_blank" rel="noopener">Abrir PDF</a>
         <a id="lnk-desc" class="boton" hidden>Descargar</a>
         <button id="btn-compartir" hidden>Compartir o imprimir</button>
@@ -1194,7 +1201,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     guardarLista(); pintarLista();
   });
   $('#btn-vaciar').addEventListener('click', () => {
-    if (!lista.length || !confirm('¿Vaciar la lista? Los nombres corregidos quedan guardados.')) return;
+    if (!lista.length || !confirm('¿Estás seguro?\nSe vaciará la lista de etiquetas. Los nombres y precios que completaste quedan guardados.')) return;
     lista = []; guardarLista(); pintarLista();
   });
 
