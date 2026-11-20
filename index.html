@@ -327,13 +327,17 @@ const ETQ = (() => {
   /** et = {l1, l2, sku, precio} -> {glifos:[{ch,x,base,em,negrita}], avisos:[]} en mm */
   function componer(et) {
     const glifos = [], avisos = [];
-    const lineas = [normalizar(et.l1), normalizar(et.l2)].filter(Boolean);
-    const anchoN = Math.max(0, ...lineas.map(l => anchoTexto(l, SPEC.emNombre, true)));
-    const escN = anchoN > SPEC.anchoMax ? SPEC.anchoMax / anchoN : 1;
-    if (escN < 0.999) avisos.push(`Nombre achicado al ${Math.round(escN * 100)} % para que quepa`);
+    // línea 1 = marca, línea 2 = descripción; cada una se achica por separado si no cabe
+    const crudas = [normalizar(et.l1), normalizar(et.l2)];
+    const lineas = crudas.map((l, i) => ({ l, n: i + 1 })).filter(x => x.l);
     if (!lineas.length) avisos.push('Sin nombre');
     const bases = lineas.length === 2 ? [SPEC.base1, SPEC.base2] : [SPEC.baseUnica];
-    lineas.forEach((l, i) => colocar(glifos, l, SPEC.emNombre * escN, true, bases[i]));
+    lineas.forEach(({ l, n }, i) => {
+      const w = anchoTexto(l, SPEC.emNombre, true);
+      const esc = w > SPEC.anchoMax ? SPEC.anchoMax / w : 1;
+      if (esc < 0.999) avisos.push(`Línea ${n} achicada al ${Math.round(esc * 100)} % para que quepa`);
+      colocar(glifos, l, SPEC.emNombre * esc, true, bases[i]);
+    });
     colocarAjustado(glifos, normalizar('SKU ' + (et.sku ?? '')), SPEC.emNombre, false, SPEC.baseSku, avisos, 'SKU');
     const precio = formatoPrecio(et.precio);
     if (precio) colocarAjustado(glifos, precio, SPEC.emPrecio, true, SPEC.basePrecio, avisos, 'Precio');
@@ -893,6 +897,9 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     });
   }
   /** Deja activo un inventario (del link o de un archivo) y pone al día la lista. */
+  /** Formato de la etiqueta: línea 1 = marca, línea 2 = descripción. */
+  const FORMATO = 2;
+  const lineasPorDefecto = p => ({ l1: ETQ.normalizar(String(p.marca || '').replace(/_/g, ' ')), l2: ETQ.normalizar(p.desc || '') });
   function aplicarInventario(productos, info) {
     infoInv = info;
     inv = ETQ.indexar(ETQ.combinar(productos, PRE));
@@ -900,9 +907,12 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     for (const it of lista) {
       const p = inv.porSku.get(it.sku);
       it.encontrado = !!p;
+      // ítems armados con el formato anterior (descripción repartida en 2 líneas) y nunca corregidos: pasan a marca / descripción
+      if (p && it.fmt !== FORMATO && !nombres[it.sku]) { const a = lineasPorDefecto(p); it.l1 = a.l1; it.l2 = a.l2; }
+      if (p) it.fmt = FORMATO;
       if (p && !p.soloPrecarga) {
         // nombre nunca corregido a mano: se rearma si el inventario trae otra descripción
-        if (!nombres[it.sku] && p.desc !== it.desc) { const a = ETQ.partirNombre(p.desc); it.l1 = a.l1; it.l2 = a.l2; }
+        if (!nombres[it.sku] && p.desc !== it.desc) { const a = lineasPorDefecto(p); it.l1 = a.l1; it.l2 = a.l2; }
         it.desc = p.desc;
         if (!it.precioManual) it.precio = p.precio;
       }
@@ -1005,7 +1015,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     if (!r.total) { cont.innerHTML = ''; msg.innerHTML = `<div class="error" style="margin-top:8px">No se encontró «${esc(q.trim())}» en el inventario.</div>`; return; }
     // SKU con datos incompletos: se muestra lo que falta (o lo que el cliente ya completó)
     const celdaDesc = p => !p.soloPrecarga ? esc(p.desc)
-      : p.descCliente ? `${esc(p.descCliente)} <span class="suave" style="font-size:12px">(completado por ti)</span>` : '<span class="falta">Falta nombre</span>';
+      : p.descCliente ? `${esc(p.descCliente)} <span class="suave" style="font-size:12px">(completado por ti)</span>` : '<span class="falta">Falta descripción</span>';
     const celdaPrecio = p => !p.soloPrecarga ? esc(ETQ.formatoPrecio(p.precio))
       : p.precioCliente !== null && p.precioCliente !== undefined ? esc(ETQ.formatoPrecio(p.precioCliente)) : '<span class="falta">Falta precio</span>';
     const filas = r.lista.map(({ p, tipo }, i) =>
@@ -1054,12 +1064,12 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const ya = lista.find(it => it.sku === p.sku);
     if (ya) ya.cant = Math.min(999, (ya.cant || 0) + cant);
     else {
-      // sin nombre en los datos (SKU que venía incompleto): se parte con la marca en la línea 1
-      const g = nombres[p.sku], auto = p.desc ? ETQ.partirNombre(p.desc) : { l1: ETQ.normalizar(p.marca || ''), l2: '' };
+      // línea 1 = marca, línea 2 = descripción (o lo que el cliente ya corrigió para este SKU)
+      const g = nombres[p.sku], auto = lineasPorDefecto(p);
       // si venía sin precio y el cliente ya lo completó antes, se usa ese
       const precio = p.soloPrecarga && completados[p.sku] ? completados[p.sku].precio : p.precio;
       lista.push({ id: sec++, sku: p.sku, desc: p.desc, l1: g ? g[0] : auto.l1, l2: g ? g[1] : auto.l2,
-                   precio, precioManual: !!(p.soloPrecarga && completados[p.sku]), cant, encontrado: true });
+                   precio, precioManual: !!(p.soloPrecarga && completados[p.sku]), cant, encontrado: true, fmt: FORMATO });
     }
     guardarLista();
     if (pintar) {
@@ -1083,7 +1093,7 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     const a = [];
     if (inv && !it.encontrado) a.push(['error', 'Este SKU no está en el inventario cargado']);
     if (faltaCompletar(it)) {
-      const faltan = [!nombres[it.sku] ? 'el nombre (línea 1 y 2)' : '', (it.precio === null || it.precio === undefined || it.precio === '') ? 'el precio' : ''].filter(Boolean);
+      const faltan = [!nombres[it.sku] ? 'la descripción (línea 2)' : '', (it.precio === null || it.precio === undefined || it.precio === '') ? 'el precio' : ''].filter(Boolean);
       a.push(['aviso', `A este SKU le falta ${faltan.join(' y ')}. Escríbelo aquí: queda guardado para la próxima vez que lo busques.`]);
     }
     const pi = precioDistinto(it);
@@ -1104,8 +1114,8 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     return `<div class="item${inv && !it.encontrado ? ' no-encontrado' : ''}" data-id="${it.id}">
       <div class="prev-cont">${ETQ.svgEtiqueta(it).replace('<svg ', '<svg class="prev" ')}</div>
       <div class="campos">
-        <label class="c-l1">Línea 1<input type="text" data-f="l1" value="${esc(it.l1)}" spellcheck="false"></label>
-        <label class="c-l2">Línea 2<input type="text" data-f="l2" value="${esc(it.l2)}" spellcheck="false"></label>
+        <label class="c-l1">Línea 1 · marca<input type="text" data-f="l1" value="${esc(it.l1)}" spellcheck="false"></label>
+        <label class="c-l2">Línea 2 · descripción<input type="text" data-f="l2" value="${esc(it.l2)}" spellcheck="false"></label>
         <label class="c-sku">SKU<span class="sku-txt">${esc(it.sku)}</span></label>
         <label class="c-precio">Precio<input type="text" inputmode="numeric" data-f="precio" value="${precio}"></label>
         <label class="c-cant">Cantidad<input type="number" min="0" max="999" data-f="cant" value="${it.cant}"></label>
@@ -1199,8 +1209,8 @@ if (typeof module !== 'undefined') module.exports = ETQ;
     else if (b.dataset.a === 'restaurar') {
       guardarNombre(it.sku, null);
       const p = inv?.porSku.get(it.sku);
-      const a = p && !p.desc ? { l1: ETQ.normalizar(p.marca || ''), l2: '' } : ETQ.partirNombre(p ? p.desc : it.desc);
-      it.l1 = a.l1; it.l2 = a.l2;
+      const a = lineasPorDefecto(p || { marca: '', desc: it.desc });
+      it.l1 = a.l1; it.l2 = a.l2; it.fmt = FORMATO;
       if (p) { it.precio = p.precio; it.precioManual = false; }
       if (p && p.soloPrecarga) { guardarCompletado(it.sku, null); completarConCliente(p); }
     }
